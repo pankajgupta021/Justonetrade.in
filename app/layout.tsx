@@ -12,7 +12,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: "JustOneTrade.in | Premium Market Intelligence",
-  description: "Premium, real-time market signals for the NIFTY index, delivered straight to your WhatsApp.",
+  description: "Premium, real-time market signals for SPX Index Options, delivered straight to your WhatsApp.",
 };
 
 export default function RootLayout({

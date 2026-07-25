@@ -20,7 +20,7 @@ const sidebarNavItems = [
     icon: LayoutDashboard,
   },
   {
-    title: "NIFTY Market",
+    title: "SPX Options Market",
     href: "/admin/market",
     icon: LineChart,
   },

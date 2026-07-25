@@ -29,7 +29,7 @@ export function Pricing() {
               <div className="absolute top-0 inset-x-0 h-1 bg-primary"></div>
               <CardHeader className="text-center pb-8 pt-8">
                 <CardTitle className="text-2xl mb-2">Premium Access</CardTitle>
-                <CardDescription>Everything you need for NIFTY trading</CardDescription>
+                <CardDescription>Everything you need for SPX Options trading</CardDescription>
                 <div className="mt-6 flex items-baseline justify-center gap-x-2">
                   <span className="text-5xl font-bold tracking-tight text-foreground">₹2,999</span>
                   <span className="text-sm font-semibold leading-6 tracking-wide text-muted-foreground">/month</span>
@@ -39,7 +39,7 @@ export function Pricing() {
                 <ul className="space-y-4 text-sm leading-6 text-muted-foreground">
                   <li className="flex gap-x-3">
                     <Check className="h-6 w-5 flex-none text-primary" aria-hidden="true" />
-                    Real-time NIFTY 50 market signals
+                    Real-time SPX Index Options signals
                   </li>
                   <li className="flex gap-x-3">
                     <Check className="h-6 w-5 flex-none text-primary" aria-hidden="true" />

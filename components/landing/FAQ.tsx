@@ -9,25 +9,33 @@ import {
 
 const faqs = [
   {
-    question: "How does the subscription work?",
-    answer: "Once you subscribe, you will gain access to our private WhatsApp group where all NIFTY market signals are posted in real-time. Your subscription is billed monthly and you can cancel at any time.",
+    question: "What market does the platform focus on?",
+    answer: "The platform focuses specifically on SPX Index Options.",
   },
   {
-    question: "How are signals delivered?",
-    answer: "All signals are delivered exclusively via WhatsApp to ensure you receive notifications instantly on your mobile device, wherever you are.",
+    question: "How do I become a subscriber?",
+    answer: "Create an account, select a subscription plan, and complete the payment process.",
   },
   {
-    question: "Is trading automated?",
-    answer: "No, we only provide informational market signals. You are entirely responsible for executing your own trades on your preferred brokerage platform.",
+    question: "How will I receive signals?",
+    answer: "Active subscribers receive signals through a private WhatsApp group after access is granted by the provider.",
   },
   {
-    question: "Which market is covered?",
-    answer: "Our service is 100% focused on the NIFTY 50 index. We do not provide signals for other indices, stocks, forex, or crypto markets.",
+    question: "Are trades executed automatically?",
+    answer: "No. The platform does not execute trades automatically. The provider generates and reviews signals manually.",
   },
   {
-    question: "How does WhatsApp access work?",
-    answer: "After completing your payment, you will receive a secure invite link to our broadcast list/group on WhatsApp. Simply tap the link to join and start receiving signals.",
+    question: "Does the platform automatically send WhatsApp messages?",
+    answer: "No. The platform prepares a pre-filled message, which the provider reviews and manually sends through WhatsApp.",
   },
+  {
+    question: "How do I get WhatsApp access?",
+    answer: "After successful payment and subscription activation, the provider/admin will process your access to the private WhatsApp group.",
+  },
+  {
+    question: "Does the platform guarantee profits?",
+    answer: "No. The platform does not guarantee profits or investment returns. Trading and investing involve risk, and users should make their own decisions.",
+  }
 ];
 
 export function FAQ() {
@@ -37,7 +45,7 @@ export function FAQ() {
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold tracking-tight mb-4">Frequently Asked Questions</h2>
           <p className="text-muted-foreground">
-            Clear answers to common questions about our NIFTY signal service.
+            Clear answers to common questions about our SPX signal service.
           </p>
         </div>
 

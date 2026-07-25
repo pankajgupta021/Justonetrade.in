@@ -11,7 +11,7 @@ export default function AdminDashboardPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Overview</h1>
           <p className="text-muted-foreground mt-1">
-            Monitor platform metrics and NIFTY market status.
+            Monitor platform metrics and SPX Options market status.
           </p>
         </div>
         <Button size="sm" variant="outline">
@@ -78,17 +78,17 @@ export default function AdminDashboardPage() {
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
         <Card className="lg:col-span-4">
           <CardHeader>
-            <CardTitle>NIFTY 50 Market Status</CardTitle>
+            <CardTitle>SPX Market Data</CardTitle>
             <CardDescription>
-              Real-time index data placeholder. (API Integration Required)
+              Real-time options data placeholder. (API Integration Required)
             </CardDescription>
           </CardHeader>
           <CardContent className="pl-2">
             <div className="h-[300px] w-full bg-muted/20 rounded-md border border-dashed flex items-center justify-center flex-col text-muted-foreground p-8 text-center">
               <LineChart className="h-10 w-10 mb-4 opacity-50" />
-              <p className="font-medium text-foreground">Market Chart Placeholder</p>
+              <p className="font-medium text-foreground">Market Data Placeholder</p>
               <p className="text-sm mt-2 max-w-sm">
-                Integrate with a financial data provider (e.g., Upstox API, Zerodha Kite Connect, or TradingView widgets) to display live NIFTY 50 charts here.
+                Integrate with a financial data provider to display live SPX Price, Option Type, Strike Price, Expiry, and Option Price here.
               </p>
             </div>
           </CardContent>
@@ -104,14 +104,14 @@ export default function AdminDashboardPage() {
           <CardContent>
             <div className="space-y-6">
               {[
-                { time: "10:15 AM", type: "BUY", target: "24,500", sl: "24,350", status: "Active" },
-                { time: "09:30 AM", type: "UPDATE", text: "Hold previous position, trail SL to 24,400", status: "Info" },
-                { time: "Yesterday", type: "SELL", target: "24,200", sl: "24,400", status: "Target Hit" },
+                { time: "10:15 AM", type: "BUY CALL", target: "5.50", sl: "3.20", status: "Active" },
+                { time: "09:30 AM", type: "UPDATE", text: "Hold previous position, trail SL to 4.00", status: "Info" },
+                { time: "Yesterday", type: "SELL PUT", target: "1.20", sl: "3.50", status: "Target Hit" },
               ].map((signal, i) => (
                 <div key={i} className="flex items-start justify-between border-b last:border-0 pb-4 last:pb-0">
                   <div className="space-y-1">
                     <p className="text-sm font-medium leading-none">
-                      {signal.type === "UPDATE" ? signal.text : `${signal.type} NIFTY @ CMP`}
+                      {signal.type === "UPDATE" ? signal.text : `${signal.type} SPX Option @ CMP`}
                     </p>
                     {signal.type !== "UPDATE" && (
                       <p className="text-sm text-muted-foreground">

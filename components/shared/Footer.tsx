@@ -11,8 +11,8 @@ export function Footer() {
               <Activity className="h-5 w-5" />
               <span className="font-bold tracking-tight">JustOneTrade.in</span>
             </Link>
-            <p className="text-sm text-muted-foreground mb-4 max-w-sm">
-              Premium, real-time market signals for the NIFTY index, delivered straight to your WhatsApp.
+            <p className="text-sm text-muted-foreground mt-4 max-w-sm">
+              Premium, real-time market signals for SPX Index Options, delivered straight to your WhatsApp.
             </p>
             <div className="p-4 bg-muted rounded-lg text-xs text-muted-foreground">
               <strong>Disclaimer:</strong> JustOneTrade.in provides informational market signals only. We do not execute trades, offer personalized financial advice, or guarantee investment returns. Trading involves significant risk.

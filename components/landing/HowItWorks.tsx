@@ -6,23 +6,23 @@ import { UserPlus, CreditCard, CheckCircle, MessageCircle } from "lucide-react";
 const steps = [
   {
     icon: UserPlus,
-    title: "1. Create an Account",
-    description: "Sign up securely in seconds. No complex verification required.",
+    title: "1. Create Your Account",
+    description: "Sign up and create your account in a few simple steps.",
   },
   {
     icon: CreditCard,
-    title: "2. Choose a Subscription",
-    description: "Select our straightforward monthly plan. Transparent pricing with no hidden fees.",
+    title: "2. Choose Your Plan",
+    description: "Select the subscription plan that suits you and complete your payment securely.",
   },
   {
     icon: CheckCircle,
-    title: "3. Complete Payment",
-    description: "Process your payment through our secure, industry-standard gateway.",
+    title: "3. Get Approved",
+    description: "After successful payment, your subscription is activated and your WhatsApp access is processed by the provider.",
   },
   {
     icon: MessageCircle,
-    title: "4. Get WhatsApp Access",
-    description: "Receive instant access to our private WhatsApp group for real-time NIFTY signals.",
+    title: "4. Receive Signals",
+    description: "Once access is granted, receive SPX Index Options signals through the private WhatsApp group.",
   },
 ];
 
