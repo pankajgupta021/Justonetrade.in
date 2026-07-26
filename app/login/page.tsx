@@ -8,7 +8,6 @@ import { Eye, EyeOff, Activity, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function LoginPage() {
@@ -26,19 +25,32 @@ export default function LoginPage() {
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
 
-    // TODO: Integrate actual authentication here
-    // Mock authentication flow
-    setTimeout(() => {
-      if (email === "admin@example.com" && password === "password") {
-        router.push("/admin");
-      } else if (email && password) {
-        // Mock successful user login
-        router.push("/dashboard");
-      } else {
-        setError("Invalid credentials. Please check your email and password.");
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+
+      if (!data.success) {
+        setError(data.error?.message || "Invalid credentials.");
         setIsLoading(false);
+        return;
       }
-    }, 1500);
+
+      // Redirect based on role
+      if (data.data.user.role === "ADMIN_PROVIDER") {
+        router.push("/admin");
+      } else {
+        router.push("/dashboard");
+      }
+      router.refresh();
+    } catch (err) {
+      setError("Something went wrong. Please try again.");
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -112,15 +124,6 @@ export default function LoginPage() {
                     </span>
                   </Button>
                 </div>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox id="remember" name="remember" disabled={isLoading} />
-                <Label
-                  htmlFor="remember"
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                >
-                  Remember me
-                </Label>
               </div>
             </CardContent>
             <CardFooter className="flex flex-col space-y-4">

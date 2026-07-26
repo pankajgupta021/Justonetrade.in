@@ -19,6 +19,7 @@ export default function SignupPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [agreeTerms, setAgreeTerms] = useState(false);
 
   // Simple password strength calculation
   const getPasswordStrength = (pass: string) => {
@@ -49,9 +50,6 @@ export default function SignupPage() {
       return;
     }
 
-    const formData = new FormData(e.currentTarget);
-    const agreeTerms = formData.get("terms");
-
     if (!agreeTerms) {
       setError("You must agree to the Terms & Conditions");
       return;
@@ -59,12 +57,42 @@ export default function SignupPage() {
 
     setIsLoading(true);
 
-    // TODO: Integrate actual signup/registration logic here
-    // Mock registration flow
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      const form = e.currentTarget;
+      const formData = new FormData(form);
+
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fullName: formData.get("fullName"),
+          email: formData.get("email"),
+          phone: formData.get("phone"),
+          password,
+          confirmPassword,
+          acceptTerms: agreeTerms,
+          acceptPrivacy: agreeTerms,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!data.success) {
+        if (data.error?.fields) {
+          const firstFieldError = Object.values(data.error.fields).flat()[0];
+          setError(typeof firstFieldError === "string" ? firstFieldError : data.error.message);
+        } else {
+          setError(data.error?.message || "Registration failed. Please try again.");
+        }
+        setIsLoading(false);
+        return;
+      }
+
       router.push("/dashboard");
-    }, 1500);
+    } catch (err) {
+      setError("Something went wrong. Please try again.");
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -209,7 +237,7 @@ export default function SignupPage() {
               </div>
 
               <div className="flex items-start space-x-2 pt-2">
-                <Checkbox id="terms" name="terms" disabled={isLoading} />
+                <Checkbox id="terms" name="terms" disabled={isLoading} checked={agreeTerms} onCheckedChange={(checked) => setAgreeTerms(!!checked)} />
                 <Label
                   htmlFor="terms"
                   className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 mt-1"
