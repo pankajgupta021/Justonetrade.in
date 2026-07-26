@@ -150,7 +150,8 @@ export default function SignupPage() {
                   id="phone"
                   name="phone"
                   type="tel"
-                  placeholder="+91 98765 43210"
+                  placeholder="+1 (555) 123-4567"
+                  maxLength={20}
                   required
                   disabled={isLoading}
                 />
