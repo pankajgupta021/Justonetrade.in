@@ -17,7 +17,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Webhook secret missing" }, { status: 500 });
     }
 
-    // Verify webhook signature
     const expectedSignature = crypto
       .createHmac("sha256", secret)
       .update(body)
@@ -29,27 +28,22 @@ export async function POST(request: Request) {
 
     const event = JSON.parse(body);
 
-    // Handle payment capture / subscription charge
-    if (event.event === "payment.captured" || event.event === "subscription.charged") {
+    if (event.event === "payment.captured") {
       const paymentEntity = event.payload.payment.entity;
-      const orderId = paymentEntity.order_id || event.payload.subscription?.entity?.id;
+      const orderId = paymentEntity.order_id;
 
       if (!orderId) {
-        return NextResponse.json({ success: true, message: "No order/subscription ID found, skipping." });
+        return NextResponse.json({ success: true, message: "No order_id, skipping." });
       }
 
       await prisma.$transaction(async (tx) => {
-        // Find the pending transaction
         const transaction = await tx.paymentTransaction.findUnique({
-          where: { razorpayOrderId: orderId }
+          where: { razorpayOrderId: orderId },
         });
 
         if (!transaction) return;
-
-        // If it's already success, skip to avoid double processing
         if (transaction.status === "SUCCESS") return;
 
-        // Update transaction
         await tx.paymentTransaction.update({
           where: { id: transaction.id },
           data: {
@@ -67,9 +61,11 @@ export async function POST(request: Request) {
         });
 
         if (existingSubscription) {
-          const baseDate = existingSubscription.currentPeriodEnd > now ? existingSubscription.currentPeriodEnd : now;
+          const baseDate = existingSubscription.currentPeriodEnd > now
+            ? existingSubscription.currentPeriodEnd
+            : now;
           const newExpiresAt = new Date(baseDate.getTime() + 30 * 24 * 60 * 60 * 1000);
-          
+
           await tx.subscription.update({
             where: { id: existingSubscription.id },
             data: {
@@ -90,15 +86,117 @@ export async function POST(request: Request) {
       });
     }
 
-    // Handle payment failure
+    // ─── SUBSCRIPTION CHARGED (recurring billing) ───
+    if (event.event === "subscription.charged") {
+      const paymentEntity = event.payload.payment.entity;
+      const subscriptionEntity = event.payload.subscription?.entity;
+      const subscriptionId = subscriptionEntity?.id;
+
+      if (!subscriptionId) {
+        return NextResponse.json({ success: true, message: "No subscription_id, skipping." });
+      }
+
+      await prisma.$transaction(async (tx) => {
+        // Find by subscription ID stored in razorpayOrderId
+        const transaction = await tx.paymentTransaction.findUnique({
+          where: { razorpayOrderId: subscriptionId },
+        });
+
+        if (!transaction) return;
+        if (transaction.status === "SUCCESS") return;
+
+        await tx.paymentTransaction.update({
+          where: { id: transaction.id },
+          data: {
+            razorpayPaymentId: paymentEntity.id,
+            status: "SUCCESS",
+          },
+        });
+
+        const now = new Date();
+        const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+        const existingSubscription = await tx.subscription.findFirst({
+          where: { userId: transaction.userId },
+        });
+
+        if (existingSubscription) {
+          const baseDate = existingSubscription.currentPeriodEnd > now
+            ? existingSubscription.currentPeriodEnd
+            : now;
+          const newExpiresAt = new Date(baseDate.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+          await tx.subscription.update({
+            where: { id: existingSubscription.id },
+            data: {
+              status: "ACTIVE",
+              currentPeriodEnd: newExpiresAt,
+              razorpaySubscriptionId: subscriptionId,
+            },
+          });
+        } else {
+          await tx.subscription.create({
+            data: {
+              userId: transaction.userId,
+              status: "ACTIVE",
+              isRecurring: true,
+              razorpaySubscriptionId: subscriptionId,
+              currentPeriodStart: now,
+              currentPeriodEnd: expiresAt,
+            },
+          });
+        }
+      });
+    }
+
+    // ─── PAYMENT FAILED ───
     if (event.event === "payment.failed") {
       const paymentEntity = event.payload.payment.entity;
       const orderId = paymentEntity.order_id;
-      
+
       if (orderId) {
         await prisma.paymentTransaction.updateMany({
           where: { razorpayOrderId: orderId },
-          data: { status: "FAILED" }
+          data: { status: "FAILED" },
+        });
+      }
+    }
+
+    // ─── SUBSCRIPTION CANCELLED ───
+    if (event.event === "subscription.cancelled") {
+      const subscriptionEntity = event.payload.subscription?.entity;
+      const subscriptionId = subscriptionEntity?.id;
+
+      if (subscriptionId) {
+        await prisma.subscription.updateMany({
+          where: { razorpaySubscriptionId: subscriptionId },
+          data: { status: "CANCELLED" },
+        });
+      }
+    }
+
+    // ─── SUBSCRIPTION EXPIRED ───
+    if (event.event === "subscription.expired" || event.event === "subscription.completed") {
+      const subscriptionEntity = event.payload.subscription?.entity;
+      const subscriptionId = subscriptionEntity?.id;
+
+      if (subscriptionId) {
+        await prisma.subscription.updateMany({
+          where: { razorpaySubscriptionId: subscriptionId },
+          data: { status: "EXPIRED" },
+        });
+      }
+    }
+
+    // ─── SUBSCRIPTION HALTED (payment failed after retries) ───
+    if (event.event === "subscription.halted") {
+      const subscriptionEntity = event.payload.subscription?.entity;
+      const subscriptionId = subscriptionEntity?.id;
+
+      if (subscriptionId) {
+        await prisma.subscription.updateMany({
+          where: { razorpaySubscriptionId: subscriptionId },
+          data: { status: "EXPIRED" },
         });
       }
     }

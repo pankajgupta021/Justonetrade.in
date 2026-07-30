@@ -44,21 +44,24 @@ model Session {
 }
 
 enum SubscriptionStatus {
+  PENDING
   ACTIVE
   EXPIRED
   CANCELLED
 }
 
 model Subscription {
-  id               String             @id @default(cuid())
-  userId           String
-  status           SubscriptionStatus @default(ACTIVE)
-  whatsappAccess   Boolean            @default(false)
-  currentPeriodStart DateTime
-  currentPeriodEnd   DateTime
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
-  user             User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                     String             @id @default(cuid())
+  userId                 String
+  status                 SubscriptionStatus @default(PENDING)
+  whatsappAccess         Boolean            @default(false)
+  razorpaySubscriptionId String?            @unique // Links to Razorpay sub_xxx for recurring
+  isRecurring            Boolean            @default(false)
+  currentPeriodStart     DateTime
+  currentPeriodEnd       DateTime
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+  user                   User               @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 enum PaymentStatus {
@@ -70,11 +73,12 @@ enum PaymentStatus {
 model PaymentTransaction {
   id                String        @id @default(cuid())
   userId            String
-  razorpayOrderId   String        @unique
+  razorpayOrderId   String        @unique // order_xxx for one-time, sub_xxx for recurring
   razorpayPaymentId String?       @unique
   razorpaySignature String?
-  amount            Int           // Amount in paise (299900)
+  amount            Int           // Amount in paise (e.g. 325000 = ₹3,250)
   currency          String        @default("INR")
+  isRecurring       Boolean       @default(false) // true for subscription payments
   status            PaymentStatus @default(PENDING)
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt

@@ -11,9 +11,14 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = body;
+    const {
+      razorpay_order_id,
+      razorpay_subscription_id,
+      razorpay_payment_id,
+      razorpay_signature,
+    } = body;
 
-    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+    if (!razorpay_payment_id || !razorpay_signature) {
       return NextResponse.json({ success: false, error: "Missing required fields" }, { status: 400 });
     }
 
@@ -22,21 +27,53 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "Configuration error" }, { status: 500 });
     }
 
-    // Verify signature
-    const generatedSignature = crypto
-      .createHmac("sha256", secret)
-      .update(razorpay_order_id + "|" + razorpay_payment_id)
-      .digest("hex");
+    const isSubscription = !!razorpay_subscription_id;
+
+    let generatedSignature: string;
+    let lookupId: string;
+
+    if (isSubscription) {
+      generatedSignature = crypto
+        .createHmac("sha256", secret)
+        .update(razorpay_payment_id + "|" + razorpay_subscription_id)
+        .digest("hex");
+      lookupId = razorpay_subscription_id;
+    } else {
+      if (!razorpay_order_id) {
+        return NextResponse.json({ success: false, error: "Missing order_id" }, { status: 400 });
+      }
+      generatedSignature = crypto
+        .createHmac("sha256", secret)
+        .update(razorpay_order_id + "|" + razorpay_payment_id)
+        .digest("hex");
+      lookupId = razorpay_order_id;
+    }
 
     if (generatedSignature !== razorpay_signature) {
+      console.error("Signature mismatch", {
+        isSubscription,
+        lookupId,
+        expected: generatedSignature,
+        received: razorpay_signature,
+      });
       return NextResponse.json({ success: false, error: "Invalid signature" }, { status: 400 });
     }
 
-    // Wrap the updates in a transaction
     await prisma.$transaction(async (tx) => {
-      // 1. Update Payment Transaction
+      const transaction = await tx.paymentTransaction.findUnique({
+        where: { razorpayOrderId: lookupId },
+      });
+
+      if (!transaction) {
+        throw new Error(`Transaction not found for ID: ${lookupId}`);
+      }
+
+      if (transaction.status === "SUCCESS") {
+        return;
+      }
+
       await tx.paymentTransaction.update({
-        where: { razorpayOrderId: razorpay_order_id },
+        where: { id: transaction.id },
         data: {
           razorpayPaymentId: razorpay_payment_id,
           razorpaySignature: razorpay_signature,
@@ -44,7 +81,6 @@ export async function POST(request: Request) {
         },
       });
 
-      // 2. Grant or extend Subscription (30 days from now)
       const now = new Date();
       const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days
 
@@ -53,15 +89,18 @@ export async function POST(request: Request) {
       });
 
       if (existingSubscription) {
-        // If they already have an active sub, extend it from its current end date or now
-        const baseDate = existingSubscription.currentPeriodEnd > now ? existingSubscription.currentPeriodEnd : now;
+        const baseDate = existingSubscription.currentPeriodEnd > now
+          ? existingSubscription.currentPeriodEnd
+          : now;
         const newExpiresAt = new Date(baseDate.getTime() + 30 * 24 * 60 * 60 * 1000);
-        
+
         await tx.subscription.update({
           where: { id: existingSubscription.id },
           data: {
             status: "ACTIVE",
             currentPeriodEnd: newExpiresAt,
+            isRecurring: isSubscription,
+            razorpaySubscriptionId: isSubscription ? razorpay_subscription_id : existingSubscription.razorpaySubscriptionId,
           },
         });
       } else {
@@ -70,6 +109,8 @@ export async function POST(request: Request) {
           data: {
             userId: session.user.id,
             status: "ACTIVE",
+            isRecurring: isSubscription,
+            razorpaySubscriptionId: isSubscription ? razorpay_subscription_id : null,
             currentPeriodStart: now,
             currentPeriodEnd: expiresAt,
           },

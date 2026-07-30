@@ -1,5 +1,4 @@
 import { SignalGenerator } from "@/components/admin/SignalGenerator";
-import { prisma } from "@/lib/prisma";
 
 export default async function AdminDashboardPage() {
   return (

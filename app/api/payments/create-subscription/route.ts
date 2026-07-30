@@ -23,22 +23,21 @@ export async function POST() {
       key_secret: process.env.RAZORPAY_KEY_SECRET,
     });
 
-    // Create a subscription in Razorpay
     const options = {
       plan_id: process.env.RAZORPAY_PLAN_ID,
-      total_count: 120, // number of billing cycles (e.g., 10 years)
-      customer_notify: 1 as const, // Let Razorpay email the customer
+      total_count: 120,
+      customer_notify: 1 as const,
     };
 
     const subscription = await razorpay.subscriptions.create(options);
 
-    // Save pending transaction (using subscription.id instead of order.id)
     await prisma.paymentTransaction.create({
       data: {
         userId: session.user.id,
         razorpayOrderId: subscription.id,
-        amount: 3900, // Hardcoded $39 for display/tracking purposes
-        currency: "USD",
+        amount: 325000,
+        currency: "INR",
+        isRecurring: true,
         status: "PENDING",
       },
     });
@@ -47,6 +46,7 @@ export async function POST() {
       success: true,
       data: {
         subscription_id: subscription.id,
+        plan_id: process.env.RAZORPAY_PLAN_ID,
         keyId: process.env.RAZORPAY_KEY_ID,
       },
     });

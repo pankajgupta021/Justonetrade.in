@@ -29,8 +29,8 @@ export function RazorpayCheckout() {
         return;
       }
 
-      const endpoint = mode === "one-time" 
-        ? "/api/payments/create-order" 
+      const endpoint = mode === "one-time"
+        ? "/api/payments/create-order"
         : "/api/payments/create-subscription";
 
       const initRes = await fetch(endpoint, { method: "POST" });
@@ -47,19 +47,19 @@ export function RazorpayCheckout() {
         name: "JustOneTrade",
         description: mode === "one-time" ? "30-Day Premium Pass" : "Monthly Premium Subscription",
         handler: async function (response: any) {
-          // Verify payment signature
           const verifyRes = await fetch("/api/payments/verify", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              razorpay_order_id: response.razorpay_order_id || response.razorpay_subscription_id,
+              razorpay_order_id: response.razorpay_order_id || undefined,
+              razorpay_subscription_id: response.razorpay_subscription_id || undefined,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
             }),
           });
-          
+
           const verifyData = await verifyRes.json();
           if (verifyData.success) {
             alert("Payment Successful! Your subscription is now active.");
@@ -69,7 +69,7 @@ export function RazorpayCheckout() {
           }
         },
         modal: {
-          ondismiss: function() {
+          ondismiss: function () {
             setIsLoading(null);
           }
         },
@@ -88,7 +88,7 @@ export function RazorpayCheckout() {
 
       // @ts-ignore
       const paymentObject = new window.Razorpay(options);
-      
+
       paymentObject.on('payment.failed', function (response: any) {
         console.error("Payment failed", response.error);
         alert(`Payment Failed: ${response.error.description}`);
@@ -105,15 +105,15 @@ export function RazorpayCheckout() {
 
   return (
     <div className="flex flex-col gap-4 w-full sm:w-auto">
-      <Button 
-        onClick={() => handlePayment("recurring")} 
+      <Button
+        onClick={() => handlePayment("recurring")}
         disabled={isLoading !== null}
         className="w-full"
       >
         {isLoading === "recurring" ? (
           <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Processing...</>
         ) : (
-          "Subscribe Monthly ($39/mo)"
+          "Subscribe Monthly (₹3,250/mo)"
         )}
       </Button>
 
@@ -126,16 +126,16 @@ export function RazorpayCheckout() {
         </div>
       </div>
 
-      <Button 
+      <Button
         variant="outline"
-        onClick={() => handlePayment("one-time")} 
+        onClick={() => handlePayment("one-time")}
         disabled={isLoading !== null}
         className="w-full"
       >
         {isLoading === "one-time" ? (
           <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Processing...</>
         ) : (
-          "Buy 30-Day Pass ($39)"
+          "Buy 30-Day Pass (₹3,250)"
         )}
       </Button>
     </div>

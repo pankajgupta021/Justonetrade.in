@@ -8,10 +8,9 @@ function LiveSPXWidget() {
 
   useEffect(() => {
     if (!container.current) return;
-    
-    // Clear previous widget
+
     container.current.innerHTML = '<div class="tradingview-widget-container__widget"></div>';
-    
+
     const script = document.createElement("script");
     script.src = "https://s3.tradingview.com/external-embedding/embed-widget-single-quote.js";
     script.type = "text/javascript";

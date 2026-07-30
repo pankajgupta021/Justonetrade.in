@@ -31,7 +31,7 @@ export function Pricing() {
                 <CardTitle className="text-2xl mb-2">Premium Access</CardTitle>
                 <CardDescription>Everything you need for SPX Options trading</CardDescription>
                 <div className="mt-6 flex items-baseline justify-center gap-x-2">
-                  <span className="text-5xl font-bold tracking-tight text-foreground">₹2,999</span>
+                  <span className="text-5xl font-bold tracking-tight text-foreground">₹3,250</span>
                   <span className="text-sm font-semibold leading-6 tracking-wide text-muted-foreground">/month</span>
                 </div>
               </CardHeader>

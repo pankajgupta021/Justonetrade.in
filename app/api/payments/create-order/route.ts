@@ -23,9 +23,9 @@ export async function POST() {
       key_secret: process.env.RAZORPAY_KEY_SECRET,
     });
 
-    // Hardcode the amount in backend: 39 USD = 3900 cents
-    const amount = 3900;
-    const currency = "USD";
+    // ₹3,250 in paise = 325000
+    const amount = 325000;
+    const currency = "INR";
 
     const options = {
       amount,
@@ -43,6 +43,7 @@ export async function POST() {
         razorpayOrderId: order.id,
         amount: amount,
         currency: currency,
+        isRecurring: false,
         status: "PENDING",
       },
     });
@@ -53,7 +54,7 @@ export async function POST() {
         id: order.id,
         amount: order.amount,
         currency: order.currency,
-        keyId: process.env.RAZORPAY_KEY_ID, // Safe to expose public key
+        keyId: process.env.RAZORPAY_KEY_ID,
       },
     });
   } catch (error) {
