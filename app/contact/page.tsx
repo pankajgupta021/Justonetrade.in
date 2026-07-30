@@ -55,7 +55,7 @@ export default function ContactPage() {
           </div>
           <h1 className="text-3xl font-bold tracking-tight">Contact Us</h1>
           <p className="text-muted-foreground mt-2 max-w-sm">
-            Have questions about our SPX trading tips? Send us a message and we'll get back to you.
+            Have questions about our SPX trading education? Send us a message and we'll get back to you.
           </p>
         </div>
 
