@@ -12,10 +12,10 @@ export function Footer() {
               <span className="font-bold tracking-tight">JustOneTrade.in</span>
             </Link>
             <p className="text-sm text-muted-foreground mt-4 max-w-sm">
-              Premium, real-time market signals for SPX Index Options, delivered straight to your WhatsApp.
+              Premium technical analysis and educational chart studies for SPX Index Options, delivered straight to your WhatsApp.
             </p>
             <div className="p-4 bg-muted rounded-lg text-xs text-muted-foreground">
-              <strong>Disclaimer:</strong> JustOneTrade.in provides informational market signals only. We do not execute trades, offer personalized financial advice, or guarantee investment returns. Trading involves significant risk.
+              <strong>Disclaimer:</strong> JustOneTrade.in provides educational technical analysis and chart studies only. We are not SEBI registered advisors. We do not provide buy/sell recommendations, trade signals, execution services, or personalized financial advice. All analysis is for learning purposes only. Trading involves significant risk.
             </div>
           </div>
           

@@ -15,10 +15,10 @@ export function AboutUs() {
         >
           <h2 className="text-3xl font-bold tracking-tight mb-6">About Us</h2>
           <p className="text-lg text-muted-foreground leading-relaxed">
-            We are a team of technical analysts, enthusiastic about how the spx market moves. After a lot of research we found that there are times and patterns when we can catch a part of the market directional move. During this move, we can make good gains. 
+            We are a team of dedicated technical analysts passionate about market dynamics. We specialize in studying complex price action patterns, trend analysis, and indicators. Our mission is to share our chart setups and analysis strictly for educational purposes, helping you understand how technical criteria apply to the SPX index.
             <br className="hidden sm:block" />
             <br className="hidden sm:block" />
-            This is what we are offering as a service to our customers.
+            We offer chart studies, pattern walkthroughs, and technical analysis training to help you master market concepts.
           </p>
         </motion.div>
       </div>

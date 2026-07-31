@@ -28,11 +28,11 @@ export function Services() {
                 <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
                   <Target className="h-6 w-6 text-primary" />
                 </div>
-                <CardTitle className="text-2xl">Spx Trading Education</CardTitle>
+                <CardTitle className="text-2xl">SPX Charting Education</CardTitle>
               </CardHeader>
               <CardContent className="text-center">
                 <CardDescription className="text-base text-muted-foreground leading-relaxed">
-                  Based on our technical analysis, we give the best Risk Reward points of entry and exit to our customers.
+                  Based on our technical analysis, we provide training on identifying optimal risk-reward entry and exit criteria.
                 </CardDescription>
               </CardContent>
             </Card>

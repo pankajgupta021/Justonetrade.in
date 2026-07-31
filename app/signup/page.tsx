@@ -107,26 +107,26 @@ export default function SignupPage() {
 
         <form onSubmit={handleSubmit}>
           <Card className="shadow-lg border-primary/10">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold">Create an account</CardTitle>
-            <CardDescription>
-              Enter your information to get started with our premium signals
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
+            <CardHeader className="space-y-1">
+              <CardTitle className="text-2xl font-bold">Create an account</CardTitle>
+              <CardDescription>
+                Enter your information to get started with our charting education
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
               {error && (
                 <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-md">
                   {error}
                 </div>
               )}
-              
+
               <div className="space-y-2">
                 <Label htmlFor="fullName">Full Name</Label>
                 <Input
                   id="fullName"
                   name="fullName"
                   type="text"
-                  placeholder="John Doe"
+                  placeholder="FullName"
                   required
                   disabled={isLoading}
                 />
@@ -138,7 +138,7 @@ export default function SignupPage() {
                   id="email"
                   name="email"
                   type="email"
-                  placeholder="m@example.com"
+                  placeholder="you@example.com"
                   required
                   disabled={isLoading}
                 />
@@ -194,9 +194,8 @@ export default function SignupPage() {
                       {[1, 2, 3, 4].map((level) => (
                         <div
                           key={level}
-                          className={`h-full flex-1 rounded-full ${
-                            strength >= level ? strengthColor : "bg-muted"
-                          }`}
+                          className={`h-full flex-1 rounded-full ${strength >= level ? strengthColor : "bg-muted"
+                            }`}
                         />
                       ))}
                     </div>

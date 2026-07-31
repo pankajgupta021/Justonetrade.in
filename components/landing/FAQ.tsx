@@ -17,24 +17,24 @@ const faqs = [
     answer: "Create an account, select a subscription plan, and complete the payment process.",
   },
   {
-    question: "How will I receive signals?",
-    answer: "Active subscribers receive signals through a private WhatsApp group after access is granted by the provider.",
+    question: "How will I receive chart studies?",
+    answer: "Active students receive technical chart studies and analysis setups through a private WhatsApp group after access is granted by the instructor.",
   },
   {
-    question: "Are trades executed automatically?",
-    answer: "No. The platform does not execute trades automatically. The provider generates and reviews signals manually.",
+    question: "Are trade signals or recommendations provided?",
+    answer: "No. The platform does not provide buy/sell signals or financial advice. All chart setups and patterns are generated strictly for educational and training purposes.",
   },
   {
     question: "Does the platform automatically send WhatsApp messages?",
-    answer: "No. The platform prepares a pre-filled message, which the provider reviews and manually sends through WhatsApp.",
+    answer: "No. The platform prepares a pre-filled educational chart study, which the instructor reviews and manually sends through WhatsApp.",
   },
   {
     question: "How do I get WhatsApp access?",
-    answer: "After successful payment and subscription activation, the provider/admin will process your access to the private WhatsApp group.",
+    answer: "After successful payment and subscription activation, the admin will process your access to the private WhatsApp study group.",
   },
   {
     question: "Does the platform guarantee profits?",
-    answer: "No. The platform does not guarantee profits or investment returns. Trading and investing involve risk, and users should make their own decisions.",
+    answer: "No. The platform is purely educational. We do not guarantee profits or investment returns. Trading and investing involve risk, and users should make their own decisions.",
   }
 ];
 
@@ -45,7 +45,7 @@ export function FAQ() {
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold tracking-tight mb-4">Frequently Asked Questions</h2>
           <p className="text-muted-foreground">
-            Clear answers to common questions about our SPX signal service.
+            Clear answers to common questions about our SPX charting education.
           </p>
         </div>
 

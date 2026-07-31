@@ -11,8 +11,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "JustOneTrade.in | Premium Market Intelligence",
-  description: "Premium, real-time market signals for SPX Index Options, delivered straight to your WhatsApp.",
+  title: "JustOneTrade.in | Chart Analysis & Technical Education",
+  description: "Premium technical analysis and educational chart studies for SPX Index Options, delivered straight to your WhatsApp.",
 };
 
 export default function RootLayout({

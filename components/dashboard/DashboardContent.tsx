@@ -64,7 +64,7 @@ export function DashboardContent({ user }: { user: DashboardUser }) {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground mt-4">
-                Subscribe to start receiving SPX Options signals.
+                Subscribe to start receiving SPX Options chart analysis.
               </p>
             </CardContent>
           </Card>

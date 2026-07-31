@@ -17,7 +17,7 @@ export function Hero() {
           >
             <span className="inline-flex items-center rounded-full bg-muted px-3 py-1 text-sm font-medium mb-6">
               <span className="flex h-2 w-2 rounded-full bg-primary mr-2"></span>
-              SPX Index Options Exclusive
+              SPX Chart Technical Analysis
             </span>
           </motion.div>
           
@@ -27,8 +27,8 @@ export function Hero() {
             transition={{ duration: 0.5, delay: 0.1 }}
             className="text-4xl md:text-6xl font-bold tracking-tight mb-6"
           >
-            SPX Index Options Signals, <br className="hidden sm:block" />
-            <span className="text-muted-foreground">Delivered Simply.</span>
+            SPX Technical Analysis & Chart Education, <br className="hidden sm:block" />
+            <span className="text-muted-foreground">Mastering Options.</span>
           </motion.h1>
           
           <motion.p
@@ -37,7 +37,7 @@ export function Hero() {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl"
           >
-            Access a focused platform for SPX Index Options signals and market insights. Subscribe, get approved for the private WhatsApp group, and receive signals directly from the provider.
+            Access a focused platform for Education and Training on Technical Analysis and Charts of the SPX Index. Subscribe, get approved for the private WhatsApp group, and receive real-time educational chart studies directly from the instructor.
           </motion.p>
           
           <motion.div
@@ -66,7 +66,7 @@ export function Hero() {
               <div className="flex justify-between items-center border-b pb-4">
                 <div className="flex items-center gap-2">
                   <BarChart2 className="h-5 w-5 text-muted-foreground" />
-                  <span className="font-semibold">SPX Options Signal</span>
+                  <span className="font-semibold">Technical Analysis Study</span>
                 </div>
                 <span className="text-xs text-muted-foreground">10:15 AM</span>
               </div>
