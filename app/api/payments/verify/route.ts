@@ -68,12 +68,16 @@ export async function POST(request: Request) {
         throw new Error(`Transaction not found for ID: ${lookupId}`);
       }
 
+      if (transaction.userId !== session.user.id) {
+        throw new Error(`Unauthorized payment verification attempt.`);
+      }
+
       if (transaction.status === "SUCCESS") {
         return;
       }
 
-      await tx.paymentTransaction.update({
-        where: { id: transaction.id },
+      const updateResult = await tx.paymentTransaction.updateMany({
+        where: { id: transaction.id, status: "PENDING" },
         data: {
           razorpayPaymentId: razorpay_payment_id,
           razorpaySignature: razorpay_signature,
@@ -81,8 +85,12 @@ export async function POST(request: Request) {
         },
       });
 
+      if (updateResult.count === 0) {
+        return;
+      }
+
       const now = new Date();
-      const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days
+      const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
       const existingSubscription = await tx.subscription.findFirst({
         where: { userId: session.user.id },
@@ -104,7 +112,6 @@ export async function POST(request: Request) {
           },
         });
       } else {
-        // Create new subscription
         await tx.subscription.create({
           data: {
             userId: session.user.id,

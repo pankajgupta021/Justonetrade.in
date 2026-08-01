@@ -57,13 +57,12 @@ export function SubscriberTable({ users }: { users: UserWithSub[] }) {
     const webUrl = groupInvite
       ? groupInvite
       : adminNumber
-      ? `https://web.whatsapp.com/send?phone=${adminNumber}&text=${encodeURIComponent(
+        ? `https://web.whatsapp.com/send?phone=${adminNumber}&text=${encodeURIComponent(
           message
         )}`
-      : "https://web.whatsapp.com/";
+        : "https://web.whatsapp.com/";
 
     if (isLinux) {
-      // Desktop Linux: open WhatsApp Web in a new tab
       window.open(webUrl, "_blank");
       const confirmed = window.confirm(
         "Opened WhatsApp Web. After completing verification, click OK to grant access."
@@ -72,12 +71,10 @@ export function SubscriberTable({ users }: { users: UserWithSub[] }) {
       return;
     }
 
-    // Non-Linux: try app deep link first, fallback to web
     if (adminNumber) {
       const appUrl = `whatsapp://send?phone=${adminNumber}&text=${encodeURIComponent(
         message
       )}`;
-      // attempt to open the native app; user agent will handle fallback
       try {
         window.location.href = appUrl;
       } catch (e) {
@@ -94,7 +91,6 @@ export function SubscriberTable({ users }: { users: UserWithSub[] }) {
   };
 
   const filteredUsers = users.filter((u) => {
-    // Search match
     const searchMatch =
       u.fullName.toLowerCase().includes(search.toLowerCase()) ||
       u.email.toLowerCase().includes(search.toLowerCase()) ||
@@ -102,7 +98,6 @@ export function SubscriberTable({ users }: { users: UserWithSub[] }) {
 
     if (!searchMatch) return false;
 
-    // Filter match
     const hasActiveSub = u.subscriptions.length > 0;
     const isPending = hasActiveSub && !u.subscriptions[0].whatsappAccess;
     const isGranted = hasActiveSub && u.subscriptions[0].whatsappAccess;
@@ -111,7 +106,7 @@ export function SubscriberTable({ users }: { users: UserWithSub[] }) {
     if (filter === "GRANTED") return isGranted;
     if (filter === "UNPAID") return !hasActiveSub;
 
-    return true; // ALL
+    return true;
   });
 
   return (

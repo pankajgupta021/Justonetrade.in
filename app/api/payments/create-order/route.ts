@@ -23,20 +23,18 @@ export async function POST() {
       key_secret: process.env.RAZORPAY_KEY_SECRET,
     });
 
-    // ₹3,250 in paise = 325000
-    const amount = 325000;
+    const amount = 1000000; // in paise
     const currency = "INR";
 
     const options = {
       amount,
       currency,
       receipt: `receipt_${Date.now()}_${session.user.id.substring(0, 5)}`,
-      payment_capture: 1, // Auto capture
+      payment_capture: 1,
     };
 
     const order = await razorpay.orders.create(options);
 
-    // Save the pending transaction in our database
     await prisma.paymentTransaction.create({
       data: {
         userId: session.user.id,

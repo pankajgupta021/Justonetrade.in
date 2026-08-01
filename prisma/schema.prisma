@@ -73,12 +73,12 @@ enum PaymentStatus {
 model PaymentTransaction {
   id                String        @id @default(cuid())
   userId            String
-  razorpayOrderId   String        @unique // order_xxx for one-time, sub_xxx for recurring
+  razorpayOrderId   String        @unique 
   razorpayPaymentId String?       @unique
   razorpaySignature String?
-  amount            Int           // Amount in paise (e.g. 325000 = ₹3,250)
+  amount            Int           
   currency          String        @default("INR")
-  isRecurring       Boolean       @default(false) // true for subscription payments
+  isRecurring       Boolean       @default(false)
   status            PaymentStatus @default(PENDING)
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt

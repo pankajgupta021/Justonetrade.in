@@ -9,11 +9,10 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Fetch SPX price from Yahoo Finance
     const res = await fetch(
       "https://query1.finance.yahoo.com/v8/finance/chart/%5EGSPC?interval=1m&range=1d",
       {
-        next: { revalidate: 15 }, // Cache for 15 seconds
+        next: { revalidate: 2 },
       }
     );
 

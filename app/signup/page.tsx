@@ -21,7 +21,6 @@ export default function SignupPage() {
   const [error, setError] = useState<string | null>(null);
   const [agreeTerms, setAgreeTerms] = useState(false);
 
-  // Simple password strength calculation
   const getPasswordStrength = (pass: string) => {
     let strength = 0;
     if (pass.length > 7) strength += 1;

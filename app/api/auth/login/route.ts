@@ -15,7 +15,7 @@ export async function POST(request: Request) {
           success: false,
           error: {
             code: 'VALIDATION_ERROR',
-            message: 'Invalid email or password.', // Generic message
+            message: 'Invalid email or password.',
           },
         },
         { status: 400 }
@@ -24,7 +24,6 @@ export async function POST(request: Request) {
 
     const { email, password } = validatedData.data;
 
-    // Find user
     const user = await prisma.user.findUnique({
       where: { email },
     });
@@ -42,7 +41,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Verify password
     const isPasswordValid = await verifyPassword(password, user.passwordHash);
 
     if (!isPasswordValid) {
@@ -58,7 +56,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Check if account is active
     if (!user.isActive) {
       return NextResponse.json(
         {
@@ -72,7 +69,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Create secure session
     await createSession(user.id);
 
     return NextResponse.json(
