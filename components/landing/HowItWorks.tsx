@@ -12,17 +12,17 @@ const steps = [
   {
     icon: CreditCard,
     title: "2. Choose Your Plan",
-    description: "Select the subscription plan that suits you and complete your payment securely.",
+    description: "Select the training pass that suits you and complete your payment securely.",
   },
   {
     icon: CheckCircle,
-    title: "3. Get Approved",
-    description: "After successful payment, your subscription is activated and your WhatsApp access is processed by the provider.",
+    title: "3. Get Verified",
+    description: "After payment, your training subscription is activated and access to our private WhatsApp study group is processed.",
   },
   {
     icon: MessageCircle,
-    title: "4. Receive Signals",
-    description: "Once access is granted, receive SPX Index Options signals through the private WhatsApp group.",
+    title: "4. Study Charts",
+    description: "Once access is granted, receive real-time technical analysis and chart studies through the private WhatsApp group.",
   },
 ];
 
@@ -33,7 +33,7 @@ export function HowItWorks() {
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h2 className="text-3xl font-bold tracking-tight mb-4">How It Works</h2>
           <p className="text-muted-foreground">
-            A seamless onboarding experience designed to get you connected to our market intelligence as quickly as possible.
+            A seamless onboarding experience designed to get you connected to our technical training community as quickly as possible.
           </p>
         </div>
 

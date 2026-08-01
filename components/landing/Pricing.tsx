@@ -28,10 +28,10 @@ export function Pricing() {
             <Card className="border-2 border-primary/20 shadow-lg relative overflow-hidden">
               <div className="absolute top-0 inset-x-0 h-1 bg-primary"></div>
               <CardHeader className="text-center pb-8 pt-8">
-                <CardTitle className="text-2xl mb-2">Premium Access</CardTitle>
-                <CardDescription>Everything you need for SPX Options trading</CardDescription>
+                <CardTitle className="text-2xl mb-2">Premium Training Pass</CardTitle>
+                <CardDescription>Everything you need for SPX Options training</CardDescription>
                 <div className="mt-6 flex items-baseline justify-center gap-x-2">
-                  <span className="text-5xl font-bold tracking-tight text-foreground">₹3,250</span>
+                  <span className="text-5xl font-bold tracking-tight text-foreground">₹10,000</span>
                   <span className="text-sm font-semibold leading-6 tracking-wide text-muted-foreground">/month</span>
                 </div>
               </CardHeader>
@@ -39,7 +39,7 @@ export function Pricing() {
                 <ul className="space-y-4 text-sm leading-6 text-muted-foreground">
                   <li className="flex gap-x-3">
                     <Check className="h-6 w-5 flex-none text-primary" aria-hidden="true" />
-                    Real-time SPX Index Options signals
+                    Real-time SPX Index Options chart studies
                   </li>
                   <li className="flex gap-x-3">
                     <Check className="h-6 w-5 flex-none text-primary" aria-hidden="true" />

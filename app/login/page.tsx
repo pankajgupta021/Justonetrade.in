@@ -65,13 +65,13 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit}>
           <Card className="shadow-lg border-primary/10">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
-            <CardDescription>
-              Enter your credentials to access your signals
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
+            <CardHeader className="space-y-1">
+              <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
+              <CardDescription>
+                Enter your credentials to access your dashboard
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
               {error && (
                 <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-md">
                   {error}
@@ -83,7 +83,7 @@ export default function LoginPage() {
                   id="email"
                   name="email"
                   type="email"
-                  placeholder="m@example.com"
+                  placeholder="you@example.com"
                   required
                   disabled={isLoading}
                 />

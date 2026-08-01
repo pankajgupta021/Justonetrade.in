@@ -88,18 +88,9 @@ export function DashboardContent({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {hasActiveSubscription ? (
-                <p className="text-sm text-muted-foreground mt-4">
-                  Your 30-Day pass is active.
-                </p>
-              ) : (
-                <div className="mt-4 flex flex-col items-start gap-4">
-                  <p className="text-sm text-muted-foreground">
-                    Subscribe to start receiving SPX Options signals.
-                  </p>
-                  <RazorpayCheckout />
-                </div>
-              )}
+              <p className="text-sm text-muted-foreground mt-4">
+                Subscribe to start receiving SPX Options chart analysis.
+              </p>
             </CardContent>
           </Card>
 

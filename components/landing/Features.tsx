@@ -11,13 +11,13 @@ const features = [
   },
   {
     icon: Activity,
-    title: "Provider-Generated Signals",
-    description: "Signals are generated and reviewed by the provider before being manually shared with subscribers.",
+    title: "Expert Chart Analysis",
+    description: "Chart setups are analyzed and created by the instructor before being manually shared with students.",
   },
   {
     icon: Lock,
-    title: "Private Subscriber Access",
-    description: "Access to a private WhatsApp group for active subscribers.",
+    title: "Private Study Group Access",
+    description: "Access to a private WhatsApp group for active students to discuss chart studies.",
   },
   {
     icon: Smartphone,
