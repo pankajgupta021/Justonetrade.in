@@ -43,6 +43,56 @@ export function SubscriberTable({ users }: { users: UserWithSub[] }) {
     }
   };
 
+  const startWhatsAppVerification = async (subscriptionId: string) => {
+    if (typeof window === "undefined") return;
+
+    const userAgent = navigator.userAgent || "";
+    const isLinux = /Linux/.test(userAgent) && !/Android/.test(userAgent);
+
+    // Prefer a group invite link or admin number from env, fall back to web.whatsapp.com
+    const groupInvite = process.env.NEXT_PUBLIC_WHATSAPP_GROUP_INVITE;
+    const adminNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER;
+    const message = "Please verify me for access to the WhatsApp group.";
+
+    const webUrl = groupInvite
+      ? groupInvite
+      : adminNumber
+      ? `https://web.whatsapp.com/send?phone=${adminNumber}&text=${encodeURIComponent(
+          message
+        )}`
+      : "https://web.whatsapp.com/";
+
+    if (isLinux) {
+      // Desktop Linux: open WhatsApp Web in a new tab
+      window.open(webUrl, "_blank");
+      const confirmed = window.confirm(
+        "Opened WhatsApp Web. After completing verification, click OK to grant access."
+      );
+      if (confirmed) await handleGrantAccess(subscriptionId);
+      return;
+    }
+
+    // Non-Linux: try app deep link first, fallback to web
+    if (adminNumber) {
+      const appUrl = `whatsapp://send?phone=${adminNumber}&text=${encodeURIComponent(
+        message
+      )}`;
+      // attempt to open the native app; user agent will handle fallback
+      try {
+        window.location.href = appUrl;
+      } catch (e) {
+        window.open(webUrl, "_blank");
+      }
+    } else {
+      window.open(webUrl, "_blank");
+    }
+
+    const confirmed = window.confirm(
+      "Opened WhatsApp. After completing verification, click OK to grant access."
+    );
+    if (confirmed) await handleGrantAccess(subscriptionId);
+  };
+
   const filteredUsers = users.filter((u) => {
     // Search match
     const searchMatch =
@@ -147,7 +197,7 @@ export function SubscriberTable({ users }: { users: UserWithSub[] }) {
                       {hasPaid && !sub.whatsappAccess && (
                         <Button
                           size="sm"
-                          onClick={() => handleGrantAccess(sub.id)}
+                          onClick={() => startWhatsAppVerification(sub.id)}
                           className="bg-green-600 hover:bg-green-700"
                         >
                           Verify & Grant Access

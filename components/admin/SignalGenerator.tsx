@@ -1,19 +1,66 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TradingViewChart } from "@/components/admin/TradingViewChart";
+import { RefreshCw, Radio } from "lucide-react";
 
 export function SignalGenerator() {
   const [baseStrike, setBaseStrike] = useState<number>(5400);
   const [step, setStep] = useState<number>(10);
+  const [livePrice, setLivePrice] = useState<number | null>(null);
+  const [isAutoSync, setIsAutoSync] = useState<boolean>(true);
+  const [isLoadingPrice, setIsLoadingPrice] = useState<boolean>(false);
+
+  // Helper to round to nearest step
+  const roundToNearestStep = (value: number, stepValue: number) => {
+    return Math.round(value / stepValue) * stepValue;
+  };
+
+  const fetchLivePrice = async () => {
+    setIsLoadingPrice(true);
+    try {
+      const res = await fetch("/api/admin/spx-price");
+      const data = await res.json();
+      if (data.price) {
+        setLivePrice(data.price);
+        if (isAutoSync) {
+          setBaseStrike(roundToNearestStep(data.price, step));
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch live SPX price:", error);
+    } finally {
+      setIsLoadingPrice(false);
+    }
+  };
+
+  // Fetch on mount
+  useEffect(() => {
+    fetchLivePrice();
+  }, []);
+
+  // Poll for updates every 15 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchLivePrice();
+    }, 15000);
+    return () => clearInterval(interval);
+  }, [isAutoSync, step]);
+
+  // Adjust base strike if step changes while auto-sync is active
+  useEffect(() => {
+    if (livePrice && isAutoSync) {
+      setBaseStrike(roundToNearestStep(livePrice, step));
+    }
+  }, [step, isAutoSync, livePrice]);
 
   const sendQuickSignal = (action: "B" | "S", type: "Call" | "Put", strike: number) => {
     const actionText = action === "B" ? "BUY" : "SELL";
     const emoji = action === "B" ? "🟢" : "🔴";
-    const message = `🚨 *QUICK SIGNAL ALERT* 🚨\n\n${emoji} *Action:* ${actionText}\n📈 *Symbol:* SPX\n🎯 *Strike:* ${strike}\n⚡ *Type:* ${type}\n\n_Execute trade immediately._`;
+    const message = `📚 *TECHNICAL ANALYSIS CHART INSIGHT* 📚\n\n${emoji} *Action:* ${actionText}\n📈 *Symbol:* SPX\n🎯 *Strike:* ${strike}\n⚡ *Type:* ${type}\n\n_Educational study only. Practice analyzing this chart setup._`;
     const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
     window.open(url, "_blank");
   };
@@ -37,24 +84,59 @@ export function SignalGenerator() {
       <CardContent className="p-4 flex flex-col gap-3">
         
         {/* Settings Bar */}
-        <div className="flex items-center justify-between gap-4 px-2">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold uppercase text-muted-foreground">ATM:</span>
-            <Input 
-              type="number" 
-              value={baseStrike} 
-              onChange={(e) => setBaseStrike(Number(e.target.value))}
-              className="font-bold text-lg h-9 w-24 bg-primary/10 border-primary/30 text-center"
-            />
+        <div className="flex flex-col gap-2 border-b pb-3 mb-1">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Radio className={`h-4 w-4 ${isAutoSync ? "text-green-500 animate-pulse" : "text-muted-foreground"}`} />
+              <span className="text-xs font-semibold text-muted-foreground">
+                {livePrice ? `Live SPX: $${livePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "Fetching live SPX..."}
+              </span>
+            </div>
+            <div className="flex gap-2">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={fetchLivePrice} 
+                disabled={isLoadingPrice}
+                className="h-7 w-7 text-muted-foreground hover:text-foreground"
+              >
+                <RefreshCw className={`h-3.5 w-3.5 ${isLoadingPrice ? "animate-spin" : ""}`} />
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setIsAutoSync(!isAutoSync)}
+                className={`h-7 text-xs font-semibold px-2 ${isAutoSync ? "bg-green-500/10 text-green-600 border-green-500/20 hover:bg-green-500/20 hover:text-green-700" : ""}`}
+              >
+                {isAutoSync ? "Auto-Sync ON" : "Manual Mode"}
+              </Button>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold uppercase text-muted-foreground">Step:</span>
-            <Input 
-              type="number" 
-              value={step} 
-              onChange={(e) => setStep(Number(e.target.value))}
-              className="font-bold text-sm h-9 w-16 text-center"
-            />
+
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2 flex-1">
+              <span className="text-xs font-bold uppercase text-muted-foreground">ATM:</span>
+              <Input 
+                type="number" 
+                value={baseStrike} 
+                onChange={(e) => {
+                  if (!isAutoSync) {
+                    setBaseStrike(Number(e.target.value));
+                  }
+                }}
+                disabled={isAutoSync}
+                className={`font-bold text-lg h-9 w-full text-center ${isAutoSync ? "bg-muted cursor-not-allowed opacity-90 border-none" : "bg-primary/10 border-primary/30"}`}
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold uppercase text-muted-foreground">Step:</span>
+              <Input 
+                type="number" 
+                value={step} 
+                onChange={(e) => setStep(Number(e.target.value))}
+                className="font-bold text-sm h-9 w-16 text-center"
+              />
+            </div>
           </div>
         </div>
 
