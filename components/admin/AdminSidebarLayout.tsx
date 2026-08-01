@@ -2,13 +2,11 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { 
-  LayoutDashboard, 
-  LineChart, 
-  Activity, 
-  Users, 
-  CreditCard, 
-  Settings,
+import {
+  LayoutDashboard,
+  LineChart,
+  Activity,
+  Users,
   LogOut
 } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
@@ -18,11 +16,6 @@ const sidebarNavItems = [
     title: "Dashboard",
     href: "/admin",
     icon: LayoutDashboard,
-  },
-  {
-    title: "SPX Options Market",
-    href: "/admin/market",
-    icon: LineChart,
   },
   {
     title: "Subscribers",
@@ -56,7 +49,7 @@ export function AdminSidebarLayout({
             <span className="font-bold text-xl tracking-tight">Admin Portal</span>
           </Link>
         </div>
-        
+
         <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
           {sidebarNavItems.map((item, index) => {
             const isActive = pathname === item.href;
@@ -64,11 +57,10 @@ export function AdminSidebarLayout({
               <Link
                 key={index}
                 href={item.href}
-                className={`flex items-center gap-3 px-3 py-2 rounded-md transition-colors text-sm font-medium ${
-                  isActive 
-                    ? "bg-primary text-primary-foreground" 
-                    : "hover:bg-muted text-muted-foreground hover:text-foreground"
-                }`}
+                className={`flex items-center gap-3 px-3 py-2 rounded-md transition-colors text-sm font-medium ${isActive
+                  ? "bg-primary text-primary-foreground"
+                  : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                  }`}
               >
                 <item.icon className={`h-4 w-4 ${isActive ? "text-primary-foreground" : ""}`} />
                 {item.title}
@@ -76,10 +68,10 @@ export function AdminSidebarLayout({
             );
           })}
         </nav>
-        
+
         <div className="p-4 mt-auto border-t">
-          <button 
-            onClick={handleSignOut} 
+          <button
+            onClick={handleSignOut}
             className={buttonVariants({ variant: "ghost", className: "w-full justify-start text-muted-foreground hover:text-foreground" })}
           >
             <LogOut className="mr-2 h-4 w-4" />

@@ -4,8 +4,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { TradingViewChart } from "@/components/admin/TradingViewChart";
-import { RefreshCw, Radio } from "lucide-react";
+import { RefreshCw, Radio, LogOut } from "lucide-react";
 
 export function SignalGenerator() {
   const [baseStrike, setBaseStrike] = useState<number>(5400);
@@ -61,6 +60,12 @@ export function SignalGenerator() {
     const actionText = action === "B" ? "BUY" : "SELL";
     const emoji = action === "B" ? "🟢" : "🔴";
     const message = `📚 *TECHNICAL ANALYSIS CHART INSIGHT* 📚\n\n${emoji} *Action:* ${actionText}\n📈 *Symbol:* SPX\n🎯 *Strike:* ${strike}\n⚡ *Type:* ${type}\n\n_Educational study only. Practice analyzing this chart setup._`;
+    const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    window.open(url, "_blank");
+  };
+
+  const sendExitSignal = () => {
+    const message = `📚 *TECHNICAL ANALYSIS CHART INSIGHT* 📚\n\n🚨 *Action:* EXIT ALL POSITIONS\n📈 *Symbol:* SPX\n\n_Educational study only. Practice analyzing this chart setup._`;
     const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
     window.open(url, "_blank");
   };
@@ -159,9 +164,15 @@ export function SignalGenerator() {
           </div>
         </div>
 
-        {/* MIDDLE: LIVE SPX VALUE */}
-        <div className="w-full">
-          <TradingViewChart />
+        {/* MIDDLE: EXIT ALL POSITIONS BUTTON */}
+        <div className="w-full my-1">
+          <Button 
+            onClick={sendExitSignal} 
+            className="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold h-10 shadow-md border border-slate-700"
+          >
+            <LogOut className="w-4 h-4 mr-2" />
+            EXIT ALL POSITIONS
+          </Button>
         </div>
 
         {/* PUT SECTION */}

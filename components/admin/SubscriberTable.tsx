@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, X, Search, ShieldCheck } from "lucide-react";
+import { Check, X, Search, ShieldCheck, Clock, CalendarDays } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 type UserWithSub = {
@@ -20,6 +20,7 @@ type UserWithSub = {
     id: string;
     whatsappAccess: boolean;
     currentPeriodEnd: string;
+    isRecurring: boolean;
   }[];
 };
 
@@ -49,7 +50,6 @@ export function SubscriberTable({ users }: { users: UserWithSub[] }) {
     const userAgent = navigator.userAgent || "";
     const isLinux = /Linux/.test(userAgent) && !/Android/.test(userAgent);
 
-    // Prefer a group invite link or admin number from env, fall back to web.whatsapp.com
     const groupInvite = process.env.NEXT_PUBLIC_WHATSAPP_GROUP_INVITE;
     const adminNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER;
     const message = "Please verify me for access to the WhatsApp group.";
@@ -101,41 +101,65 @@ export function SubscriberTable({ users }: { users: UserWithSub[] }) {
     const hasActiveSub = u.subscriptions.length > 0;
     const isPending = hasActiveSub && !u.subscriptions[0].whatsappAccess;
     const isGranted = hasActiveSub && u.subscriptions[0].whatsappAccess;
+    const isRecurring = hasActiveSub && u.subscriptions[0].isRecurring;
 
     if (filter === "PENDING") return isPending;
     if (filter === "GRANTED") return isGranted;
     if (filter === "UNPAID") return !hasActiveSub;
+    if (filter === "MONTHLY") return hasActiveSub && isRecurring;
+    if (filter === "ONETIME") return hasActiveSub && !isRecurring;
+    if (filter === "EXPIRING") {
+      if (!hasActiveSub) return false;
+      const end = new Date(u.subscriptions[0].currentPeriodEnd);
+      const now = new Date();
+      const diffDays = (end.getTime() - now.getTime()) / (1000 * 3600 * 24);
+      return diffDays <= 7 && diffDays > 0;
+    }
 
     return true;
   });
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-card p-4 rounded-lg border">
-        <div className="relative w-full max-w-sm">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search name, email, or phone..."
-            className="pl-8"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+      <div className="flex flex-col gap-4 bg-card p-4 rounded-lg border">
+        <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+          <div className="relative w-full max-w-sm">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search name, email, or phone..."
+              className="pl-8"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          <div className="flex flex-wrap gap-2 w-full sm:w-auto justify-end">
+            <Button variant={filter === "ALL" ? "default" : "outline"} onClick={() => setFilter("ALL")} size="sm">All</Button>
+            <Button variant={filter === "PENDING" ? "default" : "outline"} onClick={() => setFilter("PENDING")} size="sm" className="bg-amber-600 hover:bg-amber-700 text-white border-none">Pending Verify</Button>
+            <Button variant={filter === "GRANTED" ? "default" : "outline"} onClick={() => setFilter("GRANTED")} size="sm" className="bg-green-600 hover:bg-green-700 text-white border-none">Granted</Button>
+            <Button variant={filter === "UNPAID" ? "default" : "outline"} onClick={() => setFilter("UNPAID")} size="sm">Unpaid</Button>
+          </div>
         </div>
-        <div className="flex gap-2 w-full sm:w-auto overflow-x-auto">
-          <Button variant={filter === "ALL" ? "default" : "outline"} onClick={() => setFilter("ALL")} size="sm">All</Button>
-          <Button variant={filter === "PENDING" ? "default" : "outline"} onClick={() => setFilter("PENDING")} size="sm" className="bg-amber-600 hover:bg-amber-700 text-white border-none">Pending Verification</Button>
-          <Button variant={filter === "GRANTED" ? "default" : "outline"} onClick={() => setFilter("GRANTED")} size="sm" className="bg-green-600 hover:bg-green-700 text-white border-none">Access Granted</Button>
-          <Button variant={filter === "UNPAID" ? "default" : "outline"} onClick={() => setFilter("UNPAID")} size="sm">Unpaid</Button>
+        <div className="flex flex-wrap gap-2 items-center">
+          <div className="text-sm font-semibold text-muted-foreground flex items-center mr-2">Filters:</div>
+          <Button variant={filter === "MONTHLY" ? "default" : "secondary"} onClick={() => setFilter("MONTHLY")} size="sm">Monthly Subscribers</Button>
+          <Button variant={filter === "ONETIME" ? "default" : "secondary"} onClick={() => setFilter("ONETIME")} size="sm">30-Day Pass</Button>
+          <Button variant={filter === "EXPIRING" ? "destructive" : "secondary"} onClick={() => setFilter("EXPIRING")} size="sm">Expiring Soon (≤ 7 days)</Button>
+          {(filter !== "ALL" || search !== "") && (
+            <Button variant="ghost" onClick={() => { setFilter("ALL"); setSearch(""); }} size="sm" className="text-muted-foreground hover:text-foreground underline underline-offset-4 decoration-muted-foreground/30">
+              Clear All
+            </Button>
+          )}
         </div>
       </div>
 
-      <div className="border rounded-md bg-card">
+      <div className="border rounded-md bg-card overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>User</TableHead>
               <TableHead>Contact</TableHead>
-              <TableHead>Payment Status</TableHead>
+              <TableHead>Plan Type</TableHead>
+              <TableHead>Expiration</TableHead>
               <TableHead>WhatsApp Access</TableHead>
               <TableHead className="text-right">Action</TableHead>
             </TableRow>
@@ -143,14 +167,23 @@ export function SubscriberTable({ users }: { users: UserWithSub[] }) {
           <TableBody>
             {filteredUsers.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                  No subscribers found.
+                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                  No subscribers found for this filter.
                 </TableCell>
               </TableRow>
             ) : (
               filteredUsers.map((user) => {
                 const sub = user.subscriptions[0];
                 const hasPaid = !!sub;
+
+                let daysLeft = 0;
+                let isExpiringSoon = false;
+                if (hasPaid) {
+                  const end = new Date(sub.currentPeriodEnd);
+                  const now = new Date();
+                  daysLeft = Math.ceil((end.getTime() - now.getTime()) / (1000 * 3600 * 24));
+                  isExpiringSoon = daysLeft <= 7 && daysLeft > 0;
+                }
 
                 return (
                   <TableRow key={user.id}>
@@ -166,9 +199,27 @@ export function SubscriberTable({ users }: { users: UserWithSub[] }) {
                     </TableCell>
                     <TableCell>
                       {hasPaid ? (
-                        <Badge className="bg-green-100 text-green-800 hover:bg-green-100 border-none">Paid</Badge>
+                        sub.isRecurring ? (
+                          <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-200 border-none">Monthly Auto</Badge>
+                        ) : (
+                          <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200 border-none">30-Day Pass</Badge>
+                        )
                       ) : (
-                        <Badge variant="outline" className="text-muted-foreground">Unpaid</Badge>
+                        <Badge variant="outline" className="text-muted-foreground">None</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {hasPaid ? (
+                        <div className="flex flex-col">
+                          <span className="text-sm">{new Date(sub.currentPeriodEnd).toLocaleDateString()}</span>
+                          {isExpiringSoon && (
+                            <span className="text-xs text-red-500 font-bold flex items-center">
+                              <Clock className="w-3 h-3 mr-1" /> {daysLeft} days left
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">-</span>
                       )}
                     </TableCell>
                     <TableCell>
@@ -179,7 +230,7 @@ export function SubscriberTable({ users }: { users: UserWithSub[] }) {
                           </div>
                         ) : (
                           <div className="flex items-center text-amber-600 text-sm font-medium">
-                            <ShieldCheck className="mr-1 h-4 w-4" /> Pending Verification
+                            <ShieldCheck className="mr-1 h-4 w-4" /> Pending
                           </div>
                         )
                       ) : (
@@ -195,7 +246,7 @@ export function SubscriberTable({ users }: { users: UserWithSub[] }) {
                           onClick={() => startWhatsAppVerification(sub.id)}
                           className="bg-green-600 hover:bg-green-700"
                         >
-                          Verify & Grant Access
+                          Verify & Grant
                         </Button>
                       )}
                     </TableCell>
