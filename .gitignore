@@ -44,3 +44,5 @@ next-env.d.ts
 .agents
 .claude
 .windsurf
+auth_info_baileys
+.baileys_auth

@@ -44,50 +44,22 @@ export function SubscriberTable({ users }: { users: UserWithSub[] }) {
     }
   };
 
-  const startWhatsAppVerification = async (subscriptionId: string) => {
+  const startWhatsAppVerification = async (subscriptionId: string, phone: string) => {
     if (typeof window === "undefined") return;
 
-    const userAgent = navigator.userAgent || "";
-    const isLinux = /Linux/.test(userAgent) && !/Android/.test(userAgent);
+    const groupInvite = process.env.NEXT_PUBLIC_WHATSAPP_GROUP_INVITE || "";
+    const message = `Welcome! Your payment is verified. Join the premium WhatsApp group here: ${groupInvite}`;
+    
+    // Clean phone number (remove +, spaces, etc. to ensure WhatsApp deep link works)
+    const formattedPhone = phone.replace(/[^0-9]/g, '');
 
-    const groupInvite = process.env.NEXT_PUBLIC_WHATSAPP_GROUP_INVITE;
-    const adminNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER;
-    const message = "Please verify me for access to the WhatsApp group.";
+    const webUrl = `https://web.whatsapp.com/send?phone=${formattedPhone}&text=${encodeURIComponent(message)}`;
+    
+    // Open in a named tab to reuse it and prevent opening multiple tabs
+    window.open(webUrl, "whatsapp_admin_tab");
 
-    const webUrl = groupInvite
-      ? groupInvite
-      : adminNumber
-        ? `https://web.whatsapp.com/send?phone=${adminNumber}&text=${encodeURIComponent(
-          message
-        )}`
-        : "https://web.whatsapp.com/";
-
-    if (isLinux) {
-      window.open(webUrl, "_blank");
-      const confirmed = window.confirm(
-        "Opened WhatsApp Web. After completing verification, click OK to grant access."
-      );
-      if (confirmed) await handleGrantAccess(subscriptionId);
-      return;
-    }
-
-    if (adminNumber) {
-      const appUrl = `whatsapp://send?phone=${adminNumber}&text=${encodeURIComponent(
-        message
-      )}`;
-      try {
-        window.location.href = appUrl;
-      } catch (e) {
-        window.open(webUrl, "_blank");
-      }
-    } else {
-      window.open(webUrl, "_blank");
-    }
-
-    const confirmed = window.confirm(
-      "Opened WhatsApp. After completing verification, click OK to grant access."
-    );
-    if (confirmed) await handleGrantAccess(subscriptionId);
+    // Automatically grant access in the database
+    await handleGrantAccess(subscriptionId);
   };
 
   const filteredUsers = users.filter((u) => {
@@ -243,7 +215,7 @@ export function SubscriberTable({ users }: { users: UserWithSub[] }) {
                       {hasPaid && !sub.whatsappAccess && (
                         <Button
                           size="sm"
-                          onClick={() => startWhatsAppVerification(sub.id)}
+                          onClick={() => startWhatsAppVerification(sub.id, user.phone)}
                           className="bg-green-600 hover:bg-green-700"
                         >
                           Verify & Grant

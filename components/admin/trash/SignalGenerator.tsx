@@ -1,5 +1,11 @@
 "use client";
 
+/**
+ * ARCHIVED / TRASH BACKUP
+ * This is the previous Web WhatsApp Signal Generator.
+ * Kept here safely for future reference or fallback.
+ */
+
 import { useState, useEffect, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,11 +23,6 @@ import {
   Info
 } from "lucide-react";
 
-/**
- * Extracts invite code from any WhatsApp group invite link or raw code
- * e.g. "https://chat.whatsapp.com/G2xAbCdEf12345" -> "G2xAbCdEf12345"
- * e.g. "https://web.whatsapp.com/accept?code=G2xAbCdEf12345" -> "G2xAbCdEf12345"
- */
 function extractGroupInviteCode(inviteUrlOrCode?: string): string {
   if (!inviteUrlOrCode) return "";
   const cleaned = inviteUrlOrCode.trim().split("?")[0].replace(/\/+$/, "");
@@ -29,7 +30,7 @@ function extractGroupInviteCode(inviteUrlOrCode?: string): string {
   return match ? match[1] : cleaned;
 }
 
-export function SignalGenerator() {
+export function ArchivedSignalGenerator() {
   const rawInvite = process.env.NEXT_PUBLIC_WHATSAPP_GROUP_INVITE || "";
   const groupInviteCode = extractGroupInviteCode(rawInvite);
   const hasGroupInvite = Boolean(groupInviteCode);
@@ -40,7 +41,6 @@ export function SignalGenerator() {
   const [isAutoSync, setIsAutoSync] = useState<boolean>(true);
   const [isLoadingPrice, setIsLoadingPrice] = useState<boolean>(false);
 
-  // Group & WhatsApp Mode States
   const [sendMode, setSendMode] = useState<"group" | "share">(() => (hasGroupInvite ? "group" : "share"));
   const [statusFeedback, setStatusFeedback] = useState<{
     message: string;
@@ -49,17 +49,14 @@ export function SignalGenerator() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const feedbackTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Helper to round to nearest step
   const roundToNearestStep = (value: number, stepValue: number) => {
     return Math.round(value / stepValue) * stepValue;
   };
 
-  // Base strike is derived automatically when auto-sync is on
   const baseStrike = isAutoSync && livePrice !== null 
     ? roundToNearestStep(livePrice, step) 
     : manualStrike;
 
-  // Poll for live SPX price
   useEffect(() => {
     let isMounted = true;
 
@@ -113,10 +110,6 @@ export function SignalGenerator() {
     }, 4500);
   };
 
-  /**
-   * Opens WhatsApp Web directly without intermediate app redirects.
-   * Reuses the same named tab ("whatsapp_admin_tab") to prevent multi-tab clutter.
-   */
   const openWhatsAppWeb = (url: string) => {
     if (typeof window === "undefined") return;
     const tab = window.open(url, "whatsapp_admin_tab");
@@ -136,21 +129,17 @@ export function SignalGenerator() {
   };
 
   const handleSendSignal = async (message: string) => {
-    // 1. Auto-copy text to clipboard for instant pasting
     try {
       await navigator.clipboard.writeText(message);
     } catch (err) {
       console.warn("Clipboard access denied or unavailable:", err);
     }
 
-    // 2. Open WhatsApp Web directly (avoiding desktop protocol handlers on Linux)
     if (sendMode === "group" && groupInviteCode) {
-      // Direct group navigation: lands directly inside the target WhatsApp Group chat
       const directGroupUrl = `https://web.whatsapp.com/accept?code=${encodeURIComponent(groupInviteCode)}`;
       openWhatsAppWeb(directGroupUrl);
       showFeedback("📋 Copied! WhatsApp Group opened — Press Ctrl+V & Enter to send", "success");
     } else {
-      // Pre-filled web share dialog: opens composer with pre-filled message
       const shareUrl = `https://web.whatsapp.com/send?text=${encodeURIComponent(message)}`;
       openWhatsAppWeb(shareUrl);
       showFeedback("🚀 Opened WhatsApp Web with prefilled message", "info");
@@ -185,8 +174,6 @@ export function SignalGenerator() {
   return (
     <Card className="flex flex-col border-primary/20 shadow-xl max-w-lg mx-auto w-full">
       <CardContent className="p-4 flex flex-col gap-3">
-        
-        {/* Settings Bar */}
         <div className="flex flex-col gap-2 border-b pb-3 mb-1">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -243,7 +230,6 @@ export function SignalGenerator() {
             </div>
           </div>
 
-          {/* WhatsApp Routing Configuration Bar */}
           <div className="flex items-center justify-between bg-muted/40 p-1.5 px-2.5 rounded-md border border-border/50 text-xs mt-1">
             <div className="flex items-center gap-1.5">
               {hasGroupInvite ? (
@@ -284,7 +270,6 @@ export function SignalGenerator() {
             </div>
           </div>
 
-          {/* Dynamic Feedback Banner */}
           {statusFeedback && (
             <div className={`flex items-center justify-between text-xs px-2.5 py-1.5 rounded-md border animate-in fade-in slide-in-from-top-1 duration-200 ${
               statusFeedback.type === "success" 
@@ -309,7 +294,6 @@ export function SignalGenerator() {
           )}
         </div>
 
-        {/* CALL SECTION */}
         <div className="bg-blue-500/5 p-2 rounded-lg border border-blue-500/20">
           <div className="flex items-center justify-between px-2 pb-1 mb-1 border-b border-blue-500/10 text-[11px] font-bold text-blue-600 dark:text-blue-400">
             <span>CALL STRIKES</span>
@@ -329,7 +313,6 @@ export function SignalGenerator() {
                       size="sm" 
                       onClick={() => handleSendSignal(buyMsg)} 
                       className="bg-green-600 hover:bg-green-700 text-white w-10 h-7 text-xs font-bold shadow-sm"
-                      title="Send BUY Call Signal to WhatsApp"
                     >
                       B
                     </Button>
@@ -337,7 +320,6 @@ export function SignalGenerator() {
                       size="sm" 
                       onClick={() => handleSendSignal(sellMsg)} 
                       className="bg-red-600 hover:bg-red-700 text-white w-10 h-7 text-xs font-bold shadow-sm"
-                      title="Send SELL Call Signal to WhatsApp"
                     >
                       S
                     </Button>
@@ -346,7 +328,6 @@ export function SignalGenerator() {
                       variant="ghost"
                       onClick={() => handleCopyOnly(buyMsg, `${rowId}-copy`)}
                       className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                      title="Copy Buy Call text to clipboard only"
                     >
                       {copiedId === `${rowId}-copy` ? (
                         <Check className="h-3.5 w-3.5 text-emerald-500" />
@@ -361,7 +342,6 @@ export function SignalGenerator() {
           </div>
         </div>
 
-        {/* MIDDLE: EXIT ALL POSITIONS BUTTON */}
         <div className="w-full my-1">
           <div className="flex gap-1.5 items-center">
             <Button 
@@ -376,7 +356,6 @@ export function SignalGenerator() {
               variant="outline"
               onClick={() => handleCopyOnly(buildExitSignalMessage(), "exit-copy")}
               className="h-10 w-10 border-slate-700 text-muted-foreground hover:text-foreground shrink-0"
-              title="Copy Exit Signal to clipboard only"
             >
               {copiedId === "exit-copy" ? (
                 <Check className="h-4 w-4 text-emerald-500" />
@@ -387,7 +366,6 @@ export function SignalGenerator() {
           </div>
         </div>
 
-        {/* PUT SECTION */}
         <div className="bg-orange-500/5 p-2 rounded-lg border border-orange-500/20">
           <div className="flex items-center justify-between px-2 pb-1 mb-1 border-b border-orange-500/10 text-[11px] font-bold text-orange-600 dark:text-orange-400">
             <span>PUT STRIKES</span>
@@ -407,7 +385,6 @@ export function SignalGenerator() {
                       size="sm" 
                       onClick={() => handleSendSignal(buyMsg)} 
                       className="bg-green-600 hover:bg-green-700 text-white w-10 h-7 text-xs font-bold shadow-sm"
-                      title="Send BUY Put Signal to WhatsApp"
                     >
                       B
                     </Button>
@@ -415,7 +392,6 @@ export function SignalGenerator() {
                       size="sm" 
                       onClick={() => handleSendSignal(sellMsg)} 
                       className="bg-red-600 hover:bg-red-700 text-white w-10 h-7 text-xs font-bold shadow-sm"
-                      title="Send SELL Put Signal to WhatsApp"
                     >
                       S
                     </Button>
@@ -424,7 +400,6 @@ export function SignalGenerator() {
                       variant="ghost"
                       onClick={() => handleCopyOnly(buyMsg, `${rowId}-copy`)}
                       className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                      title="Copy Buy Put text to clipboard only"
                     >
                       {copiedId === `${rowId}-copy` ? (
                         <Check className="h-3.5 w-3.5 text-emerald-500" />
@@ -443,4 +418,3 @@ export function SignalGenerator() {
     </Card>
   );
 }
-

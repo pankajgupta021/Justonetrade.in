@@ -1,11 +1,13 @@
-import { SignalGenerator } from "@/components/admin/SignalGenerator";
+import { WhatsAppDirectSignalGenerator } from "@/components/admin/WhatsAppDirectSignalGenerator";
 
 export default async function AdminDashboardPage() {
   return (
-    <div className="flex items-center justify-center w-full max-w-2xl mx-auto h-full">
+    <div className="flex items-center justify-center w-full max-w-2xl mx-auto h-full py-4">
       <div className="w-full">
-        <SignalGenerator />
+        <WhatsAppDirectSignalGenerator />
       </div>
     </div>
   );
 }
+
+
