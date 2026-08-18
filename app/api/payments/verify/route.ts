@@ -93,7 +93,7 @@ export async function POST(request: Request) {
         return;
       }
 
-      const isYearly = transaction.amount >= 2000000; // >= ₹20,000 is Yearly
+      const isYearly = transaction.amount >= 5000000;
       const durationDays = isYearly ? 365 : 30;
       const planType = isYearly ? "YEARLY" : "MONTHLY";
 
@@ -139,7 +139,6 @@ export async function POST(request: Request) {
   } catch (error: unknown) {
     console.error("Error verifying Razorpay payment:", error);
 
-    // Map specific coded errors to appropriate HTTP responses without leaking internals
     if (error instanceof Error) {
       const coded = error as Error & { code?: string };
       if (coded.code === "FORBIDDEN") {

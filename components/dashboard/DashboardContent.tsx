@@ -11,11 +11,17 @@ import {
   Sparkles, 
   Crown,
   Zap,
-  Calendar
+  Calendar,
+  Download,
+  Trash2,
+  AlertTriangle,
+  Loader2,
+  FileDown
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { RazorpayCheckout } from "@/components/payments/RazorpayCheckout";
 
 interface DashboardUser {
@@ -51,11 +57,81 @@ export function DashboardContent({
 }) {
   const router = useRouter();
   const [showUpgradeSection, setShowUpgradeSection] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const handleSignOut = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
     router.push("/login");
     router.refresh();
+  };
+
+  const handleExportData = async () => {
+    setIsExporting(true);
+    try {
+      const res = await fetch("/api/user/export-data");
+      if (!res.ok) {
+        throw new Error("Failed to generate data export");
+      }
+
+      const blob = await res.blob();
+      const contentDisposition = res.headers.get("Content-Disposition");
+      let fileName = `justonetrade_user_data_${Date.now()}.json`;
+
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename="?([^";]+)"?/);
+        if (match && match[1]) {
+          fileName = match[1];
+        }
+      }
+
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (_err) {
+      alert("Failed to export your data. Please try again or contact support.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== "DELETE") {
+      setDeleteError('Please type "DELETE" to confirm.');
+      return;
+    }
+
+    setIsDeleting(true);
+    setDeleteError(null);
+
+    try {
+      const res = await fetch("/api/user/delete-account", {
+        method: "POST",
+      });
+
+      const data = await res.json();
+
+      if (!data.success) {
+        setDeleteError(data.error || "Failed to delete account. Please try again.");
+        setIsDeleting(false);
+        return;
+      }
+
+      alert("Your account and all associated personal data have been permanently deleted.");
+      router.push("/");
+      router.refresh();
+    } catch (_err) {
+      setDeleteError("An unexpected error occurred while deleting your account.");
+      setIsDeleting(false);
+    }
   };
 
   // Calculate time remaining
@@ -300,7 +376,7 @@ export function DashboardContent({
         )}
 
         {/* Account Details Card */}
-        <Card className="shadow-sm">
+        <Card className="shadow-sm mb-8">
           <CardHeader>
             <CardTitle className="text-base font-bold">Account Profile</CardTitle>
             <CardDescription className="text-xs">
@@ -335,8 +411,180 @@ export function DashboardContent({
           </CardContent>
         </Card>
 
+        {/* Privacy & Data Protection Controls (DPDP Act Compliance) */}
+        {user.role === "SUBSCRIBER" && (
+          <Card className="shadow-sm border-border/80">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-base font-bold flex items-center gap-2">
+                    <FileDown className="h-4 w-4 text-primary" />
+                    Privacy & Data Governance
+                  </CardTitle>
+                  <CardDescription className="text-xs mt-1">
+                    Manage your personal data rights under the Digital Personal Data Protection (DPDP) Act, 2023.
+                  </CardDescription>
+                </div>
+                <Badge variant="outline" className="text-[10px] text-muted-foreground">
+                  DPDP Act Compliant
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                
+                {/* Export Data Section */}
+                <div className="p-4 rounded-xl border bg-muted/20 flex flex-col justify-between">
+                  <div>
+                    <h4 className="text-sm font-semibold flex items-center gap-2">
+                      <Download className="h-4 w-4 text-primary" />
+                      Export Your Data
+                    </h4>
+                    <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
+                      Download a complete copy of your personal details, subscription logs, and transaction receipts in machine-readable JSON format.
+                    </p>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-border/60">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={handleExportData} 
+                      disabled={isExporting}
+                      className="w-full text-xs font-semibold"
+                    >
+                      {isExporting ? (
+                        <>
+                          <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                          Preparing Export...
+                        </>
+                      ) : (
+                        <>
+                          <Download className="mr-1.5 h-3.5 w-3.5" />
+                          Download All Data (JSON)
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Delete Account Section */}
+                <div className="p-4 rounded-xl border border-destructive/20 bg-destructive/5 flex flex-col justify-between">
+                  <div>
+                    <h4 className="text-sm font-semibold text-destructive flex items-center gap-2">
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                      Delete Account & Erase Data
+                    </h4>
+                    <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
+                      Exercise your Right to Erasure. Permanently delete your profile, active subscriptions, and remove your WhatsApp signal access.
+                    </p>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-destructive/20">
+                    <Button 
+                      variant="destructive" 
+                      size="sm" 
+                      onClick={() => {
+                        setShowDeleteModal(true);
+                        setDeleteConfirmText("");
+                        setDeleteError(null);
+                      }}
+                      className="w-full text-xs font-semibold"
+                    >
+                      <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                      Delete Profile & Erase Data
+                    </Button>
+                  </div>
+                </div>
+
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-md rounded-xl border bg-card p-6 shadow-2xl space-y-4">
+            
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-destructive/10 text-destructive rounded-full shrink-0">
+                <AlertTriangle className="h-6 w-6 text-destructive" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-foreground">Permanent Account Deletion</h3>
+                <p className="text-xs text-muted-foreground">This action is permanent and cannot be undone.</p>
+              </div>
+            </div>
+
+            <div className="text-xs text-muted-foreground space-y-2 bg-muted/30 p-3 rounded-lg border">
+              <p className="font-semibold text-foreground">By confirming deletion:</p>
+              <ul className="list-disc pl-4 space-y-1">
+                <li>Your profile and registered credentials will be permanently erased.</li>
+                <li>All active subscriptions will be cancelled immediately without refund.</li>
+                <li>You will be permanently removed from the WhatsApp signals group.</li>
+                <li>All payment and session history will be purged in compliance with DPDP Act.</li>
+              </ul>
+            </div>
+
+            {deleteError && (
+              <div className="p-3 text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-md">
+                {deleteError}
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <label htmlFor="confirm-delete" className="text-xs font-medium text-foreground">
+                To confirm, type <span className="font-bold text-destructive font-mono">DELETE</span> below:
+              </label>
+              <Input
+                id="confirm-delete"
+                type="text"
+                placeholder='Type "DELETE" to confirm'
+                value={deleteConfirmText}
+                onChange={(e) => setDeleteConfirmText(e.target.value)}
+                disabled={isDeleting}
+                className="text-xs font-mono"
+                autoComplete="off"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setDeleteConfirmText("");
+                  setDeleteError(null);
+                }}
+                disabled={isDeleting}
+                className="text-xs"
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleDeleteAccount}
+                disabled={isDeleting || deleteConfirmText !== "DELETE"}
+                className="text-xs font-semibold"
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                    Deleting Profile...
+                  </>
+                ) : (
+                  "Permanently Delete Account"
+                )}
+              </Button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
-

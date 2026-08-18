@@ -265,7 +265,7 @@ export function RazorpayCheckout({ hasUsedTrial = false, onSuccess }: RazorpayCh
         {/* Tier 3: Yearly Pass (Best Value) */}
         <div className="flex flex-col justify-between p-4 rounded-xl border-2 border-primary/60 bg-primary/5 hover:border-primary transition-all shadow-md relative overflow-hidden">
           <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-[9px] font-bold px-2 py-0.5 rounded-bl-md uppercase">
-            Save ₹6,500
+            Save ₹20,000
           </div>
 
           <div>
@@ -276,8 +276,8 @@ export function RazorpayCheckout({ hasUsedTrial = false, onSuccess }: RazorpayCh
             </div>
 
             <div className="mt-3">
-              <div className="text-2xl font-bold">₹100000 <span className="text-xs font-normal text-muted-foreground">/ year</span></div>
-              <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mt-0.5">Includes 2 Months Free (₹10000/mo)</p>
+              <div className="text-2xl font-bold">₹1,00,000 <span className="text-xs font-normal text-muted-foreground">/ year</span></div>
+              <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mt-0.5">Includes 2 Months Free (Save ₹20,000)</p>
             </div>
 
             <ul className="mt-4 space-y-2 text-xs text-muted-foreground">
