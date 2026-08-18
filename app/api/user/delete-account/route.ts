@@ -4,7 +4,6 @@ import { prisma } from "@/lib/prisma";
 import { checkRateLimit, getClientKey } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
-  // Rate limit account deletion requests (5 per hour per IP)
   const rl = checkRateLimit(getClientKey(request, "delete-account"), { limit: 5, windowSecs: 3600 });
   if (!rl.success) {
     const retryAfterSecs = Math.ceil((rl.resetAt - Date.now()) / 1000);
@@ -22,7 +21,6 @@ export async function POST(request: Request) {
 
     const userId = session.user.id;
 
-    // Safety guard: prevent accidental deletion of administrator accounts from standard user dashboard
     if (session.user.role === "ADMIN_PROVIDER") {
       return NextResponse.json(
         { success: false, error: "Administrator accounts cannot be deleted from the user dashboard." },
@@ -30,12 +28,10 @@ export async function POST(request: Request) {
       );
     }
 
-    // Delete user from database (Cascades deletion to Sessions, Subscriptions, and PaymentTransactions)
     await prisma.user.delete({
       where: { id: userId },
     });
 
-    // Clear session cookies
     await deleteSession();
 
     return NextResponse.json({
