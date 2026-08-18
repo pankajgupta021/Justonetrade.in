@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff, Activity, Loader2, CheckCircle2 } from "lucide-react";
+import { Eye, EyeOff, Activity, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -88,7 +88,7 @@ export default function SignupPage() {
       }
 
       router.push("/dashboard");
-    } catch (err) {
+    } catch (_err) {
       setError("Something went wrong. Please try again.");
       setIsLoading(false);
     }

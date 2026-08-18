@@ -25,6 +25,7 @@ model User {
   passwordHash     String
   role             Role      @default(SUBSCRIBER)
   isActive         Boolean   @default(true)
+  hasUsedTrial     Boolean   @default(false)
   acceptedTermsAt  DateTime?
   acceptedPrivacyAt DateTime?
   createdAt        DateTime  @default(now())
@@ -57,6 +58,7 @@ model Subscription {
   whatsappAccess         Boolean            @default(false)
   razorpaySubscriptionId String?            @unique // Links to Razorpay sub_xxx for recurring
   isRecurring            Boolean            @default(false)
+  planType               String             @default("MONTHLY") // TRIAL, MONTHLY, YEARLY
   currentPeriodStart     DateTime
   currentPeriodEnd       DateTime
   createdAt              DateTime           @default(now())

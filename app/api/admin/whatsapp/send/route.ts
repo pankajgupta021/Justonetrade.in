@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
+import { requireRole } from "@/lib/auth/authorization";
 import { whatsAppService } from "@/lib/whatsapp/baileys";
 
 export async function POST(req: Request) {
+  const auth = await requireRole(["ADMIN_PROVIDER"]);
+  if (!auth.isAuthorized) return auth.response!;
+
   try {
     const body = await req.json();
     const { groupId, message } = body;

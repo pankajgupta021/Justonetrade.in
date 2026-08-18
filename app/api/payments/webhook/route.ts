@@ -45,7 +45,11 @@ export async function POST(request: Request) {
         if (transaction.status === "SUCCESS") return;
 
         if (transaction.amount !== paymentEntity.amount) {
-          console.error(`Amount mismatch! Expected: ${transaction.amount}, Received: ${paymentEntity.amount}`);
+          console.error(`FRAUD ALERT: Amount mismatch for order ${orderId}! Expected: ${transaction.amount}, Received: ${paymentEntity.amount}. Marking transaction as FAILED for manual review.`);
+          await tx.paymentTransaction.update({
+            where: { id: transaction.id },
+            data: { status: "FAILED" },
+          });
           return;
         }
 

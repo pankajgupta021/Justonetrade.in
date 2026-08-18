@@ -3,7 +3,7 @@ import { getSession } from "@/lib/auth/session";
 import Razorpay from "razorpay";
 import { prisma } from "@/lib/prisma";
 
-export async function POST() {
+export async function POST(req: Request) {
   try {
     const session = await getSession();
     if (!session) {
@@ -18,19 +18,26 @@ export async function POST() {
       );
     }
 
+    const body = await req.json().catch(() => ({}));
+    const plan = body?.plan === "yearly" ? "yearly" : "monthly";
+
+    const amount = plan === "yearly" ? 10000000 : 1000000;
+    const currency = "INR";
+
     const razorpay = new Razorpay({
       key_id: process.env.RAZORPAY_KEY_ID,
       key_secret: process.env.RAZORPAY_KEY_SECRET,
     });
 
-    const amount = 1000000; // in paise
-    const currency = "INR";
-
     const options = {
       amount,
       currency,
-      receipt: `receipt_${Date.now()}_${session.user.id.substring(0, 5)}`,
+      receipt: `rcpt_${plan}_${Date.now()}_${session.user.id.substring(0, 4)}`,
       payment_capture: 1,
+      notes: {
+        userId: session.user.id,
+        planType: plan.toUpperCase(),
+      },
     };
 
     const order = await razorpay.orders.create(options);
@@ -52,13 +59,15 @@ export async function POST() {
         id: order.id,
         amount: order.amount,
         currency: order.currency,
+        plan,
         keyId: process.env.RAZORPAY_KEY_ID,
       },
     });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error creating Razorpay order:", error);
+    const message = error instanceof Error ? error.message : "Failed to initialize payment.";
     return NextResponse.json(
-      { success: false, error: "Failed to initialize payment." },
+      { success: false, error: message },
       { status: 500 }
     );
   }

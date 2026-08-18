@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, memo } from 'react';
-import { Card, CardContent } from "@/components/ui/card";
 
 function LiveSPXWidget() {
   const container = useRef<HTMLDivElement>(null);

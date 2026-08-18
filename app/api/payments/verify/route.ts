@@ -49,13 +49,17 @@ export async function POST(request: Request) {
       lookupId = razorpay_order_id;
     }
 
-    if (generatedSignature !== razorpay_signature) {
-      console.error("Signature mismatch", {
-        isSubscription,
-        lookupId,
-        expected: generatedSignature,
-        received: razorpay_signature,
-      });
+    // Use timing-safe comparison to prevent timing oracle attacks.
+    // timingSafeEqual requires equal-length buffers; a length mismatch is an immediate fail.
+    const expectedBuf = Buffer.from(generatedSignature, "hex");
+    const receivedBuf = Buffer.from(razorpay_signature, "hex");
+    const signaturesMatch =
+      expectedBuf.length === receivedBuf.length &&
+      crypto.timingSafeEqual(expectedBuf, receivedBuf);
+
+    if (!signaturesMatch) {
+      // Log only non-sensitive context — never log expected/received signature values
+      console.error("Signature mismatch", { isSubscription, lookupId });
       return NextResponse.json({ success: false, error: "Invalid signature" }, { status: 400 });
     }
 
@@ -65,11 +69,11 @@ export async function POST(request: Request) {
       });
 
       if (!transaction) {
-        throw new Error(`Transaction not found for ID: ${lookupId}`);
+        throw Object.assign(new Error("Transaction not found"), { code: "NOT_FOUND" });
       }
 
       if (transaction.userId !== session.user.id) {
-        throw new Error(`Unauthorized payment verification attempt.`);
+        throw Object.assign(new Error("Unauthorized payment verification attempt"), { code: "FORBIDDEN" });
       }
 
       if (transaction.status === "SUCCESS") {
@@ -89,8 +93,12 @@ export async function POST(request: Request) {
         return;
       }
 
+      const isYearly = transaction.amount >= 2000000; // >= ₹20,000 is Yearly
+      const durationDays = isYearly ? 365 : 30;
+      const planType = isYearly ? "YEARLY" : "MONTHLY";
+
       const now = new Date();
-      const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+      const expiresAt = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000);
 
       const existingSubscription = await tx.subscription.findFirst({
         where: { userId: session.user.id },
@@ -100,12 +108,13 @@ export async function POST(request: Request) {
         const baseDate = existingSubscription.currentPeriodEnd > now
           ? existingSubscription.currentPeriodEnd
           : now;
-        const newExpiresAt = new Date(baseDate.getTime() + 30 * 24 * 60 * 60 * 1000);
+        const newExpiresAt = new Date(baseDate.getTime() + durationDays * 24 * 60 * 60 * 1000);
 
         await tx.subscription.update({
           where: { id: existingSubscription.id },
           data: {
             status: "ACTIVE",
+            planType: planType,
             currentPeriodEnd: newExpiresAt,
             isRecurring: isSubscription,
             razorpaySubscriptionId: isSubscription ? razorpay_subscription_id : existingSubscription.razorpaySubscriptionId,
@@ -116,6 +125,7 @@ export async function POST(request: Request) {
           data: {
             userId: session.user.id,
             status: "ACTIVE",
+            planType: planType,
             isRecurring: isSubscription,
             razorpaySubscriptionId: isSubscription ? razorpay_subscription_id : null,
             currentPeriodStart: now,
@@ -126,11 +136,30 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json({ success: true, message: "Payment verified successfully" });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error verifying Razorpay payment:", error);
+
+    // Map specific coded errors to appropriate HTTP responses without leaking internals
+    if (error instanceof Error) {
+      const coded = error as Error & { code?: string };
+      if (coded.code === "FORBIDDEN") {
+        return NextResponse.json(
+          { success: false, error: "Payment verification failed." },
+          { status: 403 }
+        );
+      }
+      if (coded.code === "NOT_FOUND") {
+        return NextResponse.json(
+          { success: false, error: "Payment verification failed." },
+          { status: 400 }
+        );
+      }
+    }
+
     return NextResponse.json(
-      { success: false, error: "Failed to verify payment." },
+      { success: false, error: "Payment verification failed." },
       { status: 500 }
     );
   }
 }
+

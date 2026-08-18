@@ -12,17 +12,40 @@ export default async function UserDashboardPage() {
 
   const { user } = session;
 
-  const subscription = await prisma.subscription.findFirst({
-    where: { 
-      userId: user.id,
-      status: "ACTIVE",
-      currentPeriodEnd: { gt: new Date() } // Ensure it's not expired
-    }
-  });
+  const [dbUser, subscription] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: user.id },
+      select: { hasUsedTrial: true }
+    }),
+    prisma.subscription.findFirst({
+      where: { 
+        userId: user.id,
+        status: "ACTIVE",
+        currentPeriodEnd: { gt: new Date() } // Ensure it's not expired
+      },
+      orderBy: { currentPeriodEnd: "desc" }
+    })
+  ]);
+
+  const dashboardUserData = {
+    ...user,
+    hasUsedTrial: !!dbUser?.hasUsedTrial,
+  };
+
+  const subscriptionData = subscription ? {
+    id: subscription.id,
+    planType: subscription.planType || "MONTHLY",
+    status: subscription.status,
+    whatsappAccess: subscription.whatsappAccess,
+    isRecurring: subscription.isRecurring,
+    currentPeriodStart: subscription.currentPeriodStart.toISOString(),
+    currentPeriodEnd: subscription.currentPeriodEnd.toISOString(),
+  } : null;
 
   return (
     <DashboardContent 
-      user={user} 
+      user={dashboardUserData} 
+      subscription={subscriptionData}
       hasActiveSubscription={!!subscription} 
       whatsappAccessGranted={!!subscription?.whatsappAccess}
     />

@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, X, Search, ShieldCheck, Clock, CalendarDays } from "lucide-react";
+import { Check, X, Search, ShieldCheck, Clock } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 type UserWithSub = {
@@ -15,10 +15,12 @@ type UserWithSub = {
   fullName: string;
   email: string;
   phone: string;
+  hasUsedTrial?: boolean;
   createdAt: string;
   subscriptions: {
     id: string;
     whatsappAccess: boolean;
+    planType?: string;
     currentPeriodEnd: string;
     isRecurring: boolean;
   }[];
@@ -37,29 +39,16 @@ export function SubscriberTable({ users }: { users: UserWithSub[] }) {
         body: JSON.stringify({ subscriptionId })
       });
       if (res.ok) {
+        alert("Access granted successfully! Subscriber countdown has started.");
         router.refresh();
+      } else {
+        const data = await res.json();
+        alert(data.error || "Failed to grant access.");
       }
     } catch (e) {
       console.error(e);
+      alert("Error granting access.");
     }
-  };
-
-  const startWhatsAppVerification = async (subscriptionId: string, phone: string) => {
-    if (typeof window === "undefined") return;
-
-    const groupInvite = process.env.NEXT_PUBLIC_WHATSAPP_GROUP_INVITE || "";
-    const message = `Welcome! Your payment is verified. Join the premium WhatsApp group here: ${groupInvite}`;
-    
-    // Clean phone number (remove +, spaces, etc. to ensure WhatsApp deep link works)
-    const formattedPhone = phone.replace(/[^0-9]/g, '');
-
-    const webUrl = `https://web.whatsapp.com/send?phone=${formattedPhone}&text=${encodeURIComponent(message)}`;
-    
-    // Open in a named tab to reuse it and prevent opening multiple tabs
-    window.open(webUrl, "whatsapp_admin_tab");
-
-    // Automatically grant access in the database
-    await handleGrantAccess(subscriptionId);
   };
 
   const filteredUsers = users.filter((u) => {
@@ -71,18 +60,23 @@ export function SubscriberTable({ users }: { users: UserWithSub[] }) {
     if (!searchMatch) return false;
 
     const hasActiveSub = u.subscriptions.length > 0;
-    const isPending = hasActiveSub && !u.subscriptions[0].whatsappAccess;
-    const isGranted = hasActiveSub && u.subscriptions[0].whatsappAccess;
-    const isRecurring = hasActiveSub && u.subscriptions[0].isRecurring;
+    const sub = u.subscriptions[0];
+    const isPending = hasActiveSub && !sub.whatsappAccess;
+    const isGranted = hasActiveSub && sub.whatsappAccess;
+    const isRecurring = hasActiveSub && sub.isRecurring;
+    const isTrial = hasActiveSub && sub.planType === "TRIAL";
+    const isYearly = hasActiveSub && sub.planType === "YEARLY";
 
     if (filter === "PENDING") return isPending;
     if (filter === "GRANTED") return isGranted;
     if (filter === "UNPAID") return !hasActiveSub;
-    if (filter === "MONTHLY") return hasActiveSub && isRecurring;
-    if (filter === "ONETIME") return hasActiveSub && !isRecurring;
+    if (filter === "TRIAL") return isTrial;
+    if (filter === "YEARLY") return isYearly;
+    if (filter === "MONTHLY") return hasActiveSub && (isRecurring || sub.planType === "MONTHLY");
+    if (filter === "ONETIME") return hasActiveSub && !isRecurring && sub.planType !== "TRIAL";
     if (filter === "EXPIRING") {
       if (!hasActiveSub) return false;
-      const end = new Date(u.subscriptions[0].currentPeriodEnd);
+      const end = new Date(sub.currentPeriodEnd);
       const now = new Date();
       const diffDays = (end.getTime() - now.getTime()) / (1000 * 3600 * 24);
       return diffDays <= 7 && diffDays > 0;
@@ -108,13 +102,14 @@ export function SubscriberTable({ users }: { users: UserWithSub[] }) {
             <Button variant={filter === "ALL" ? "default" : "outline"} onClick={() => setFilter("ALL")} size="sm">All</Button>
             <Button variant={filter === "PENDING" ? "default" : "outline"} onClick={() => setFilter("PENDING")} size="sm" className="bg-amber-600 hover:bg-amber-700 text-white border-none">Pending Verify</Button>
             <Button variant={filter === "GRANTED" ? "default" : "outline"} onClick={() => setFilter("GRANTED")} size="sm" className="bg-green-600 hover:bg-green-700 text-white border-none">Granted</Button>
+            <Button variant={filter === "TRIAL" ? "default" : "outline"} onClick={() => setFilter("TRIAL")} size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white border-none">Free Trials</Button>
             <Button variant={filter === "UNPAID" ? "default" : "outline"} onClick={() => setFilter("UNPAID")} size="sm">Unpaid</Button>
           </div>
         </div>
         <div className="flex flex-wrap gap-2 items-center">
           <div className="text-sm font-semibold text-muted-foreground flex items-center mr-2">Filters:</div>
-          <Button variant={filter === "MONTHLY" ? "default" : "secondary"} onClick={() => setFilter("MONTHLY")} size="sm">Monthly Subscribers</Button>
-          <Button variant={filter === "ONETIME" ? "default" : "secondary"} onClick={() => setFilter("ONETIME")} size="sm">30-Day Pass</Button>
+          <Button variant={filter === "MONTHLY" ? "default" : "secondary"} onClick={() => setFilter("MONTHLY")} size="sm">Monthly</Button>
+          <Button variant={filter === "YEARLY" ? "default" : "secondary"} onClick={() => setFilter("YEARLY")} size="sm">Yearly VIP</Button>
           <Button variant={filter === "EXPIRING" ? "destructive" : "secondary"} onClick={() => setFilter("EXPIRING")} size="sm">Expiring Soon (≤ 7 days)</Button>
           {(filter !== "ALL" || search !== "") && (
             <Button variant="ghost" onClick={() => { setFilter("ALL"); setSearch(""); }} size="sm" className="text-muted-foreground hover:text-foreground underline underline-offset-4 decoration-muted-foreground/30">
@@ -171,10 +166,14 @@ export function SubscriberTable({ users }: { users: UserWithSub[] }) {
                     </TableCell>
                     <TableCell>
                       {hasPaid ? (
-                        sub.isRecurring ? (
-                          <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-200 border-none">Monthly Auto</Badge>
+                        sub.planType === "TRIAL" ? (
+                          <Badge className="bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border-none font-bold">2-Day Trial</Badge>
+                        ) : sub.planType === "YEARLY" ? (
+                          <Badge className="bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border-none font-bold">👑 Yearly VIP</Badge>
+                        ) : sub.isRecurring ? (
+                          <Badge className="bg-purple-100 dark:bg-purple-950 text-purple-800 dark:text-purple-300 border-none">Monthly Auto</Badge>
                         ) : (
-                          <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200 border-none">30-Day Pass</Badge>
+                          <Badge className="bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300 border-none">30-Day Pass</Badge>
                         )
                       ) : (
                         <Badge variant="outline" className="text-muted-foreground">None</Badge>
@@ -215,9 +214,10 @@ export function SubscriberTable({ users }: { users: UserWithSub[] }) {
                       {hasPaid && !sub.whatsappAccess && (
                         <Button
                           size="sm"
-                          onClick={() => startWhatsAppVerification(sub.id, user.phone)}
-                          className="bg-green-600 hover:bg-green-700"
+                          onClick={() => handleGrantAccess(sub.id)}
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs"
                         >
+                          <Check className="w-3.5 h-3.5 mr-1" />
                           Verify & Grant
                         </Button>
                       )}

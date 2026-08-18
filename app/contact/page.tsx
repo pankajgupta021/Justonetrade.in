@@ -34,12 +34,12 @@ export default function ContactPage() {
       } else {
         const data = await response.json();
         if (data.errors) {
-          setError(data.errors.map((error: any) => error.message).join(", "));
+          setError(data.errors.map((e: { message: string }) => e.message).join(", "));
         } else {
           setError("Oops! There was a problem submitting your form.");
         }
       }
-    } catch (err) {
+    } catch (_err) {
       setError("Oops! There was a problem submitting your form.");
     } finally {
       setIsSubmitting(false);
@@ -55,7 +55,7 @@ export default function ContactPage() {
           </div>
           <h1 className="text-3xl font-bold tracking-tight">Contact Us</h1>
           <p className="text-muted-foreground mt-2 max-w-sm">
-            Have questions about our SPX trading education? Send us a message and we'll get back to you.
+            Have questions about our SPX trading education? Send us a message and we&apos;ll get back to you.
           </p>
         </div>
 

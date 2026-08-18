@@ -3,8 +3,19 @@ import { prisma } from '@/lib/prisma';
 import { verifyPassword } from '@/lib/auth/password';
 import { createSession } from '@/lib/auth/session';
 import { loginSchema } from '@/lib/validation/auth';
+import { checkRateLimit, getClientKey } from '@/lib/rate-limit';
 
 export async function POST(request: Request) {
+  // Rate limit: 10 attempts per 15 minutes per IP to block brute-force attacks
+  const rl = checkRateLimit(getClientKey(request, 'login'), { limit: 10, windowSecs: 900 });
+  if (!rl.success) {
+    const retryAfterSecs = Math.ceil((rl.resetAt - Date.now()) / 1000);
+    return NextResponse.json(
+      { success: false, error: { code: 'RATE_LIMITED', message: 'Too many login attempts. Please try again later.' } },
+      { status: 429, headers: { 'Retry-After': String(retryAfterSecs) } }
+    );
+  }
+
   try {
     const body = await request.json();
 

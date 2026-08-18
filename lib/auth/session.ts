@@ -76,6 +76,8 @@ export async function deleteSession() {
         where: { sessionToken },
       });
     } catch (e) {
+      // Session may have already been deleted (e.g., expired cleanup); log for observability
+      console.warn("Session delete failed during logout (may already be deleted):", e);
     }
   }
 
