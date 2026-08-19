@@ -132,7 +132,7 @@ export class WhatsAppService {
       sock.ev.on("connection.update", (update) => this.handleConnectionUpdate(update));
 
       this.isInitializing = false;
-      return await this.waitForQrOrConnected(8000);
+      return await this.waitForQrOrConnected(15000);
     } catch (err) {
       logger.error({ err }, "Failed to initialize Baileys socket");
       this.status = "disconnected";

@@ -74,18 +74,19 @@ export function WhatsAppDirectSignalGenerator() {
       const res = await fetch("/api/admin/whatsapp/status", { cache: "no-store" });
       const data = await res.json();
       if (data.success) {
-        // If a cold Vercel instance returns "disconnected" but we are currently
-        // showing a QR, trust our local state — don't blank the QR.
         if (data.status === "disconnected" && hasActiveQrRef.current) {
           return;
         }
 
         setWaStatus(data.status);
-        setQrCodeImg(data.qrCode ?? null);
+        if (data.qrCode) {
+          setQrCodeImg(data.qrCode);
+          hasActiveQrRef.current = true;
+        } else if (data.status === "disconnected") {
+          setQrCodeImg(null);
+          hasActiveQrRef.current = false;
+        }
         setConnectedNumber(data.connectedNumber);
-
-        // Update our ref to track whether a QR is currently visible
-        hasActiveQrRef.current = data.status === "qr_ready" && !!data.qrCode;
 
         if (data.status === "connected") {
           hasActiveQrRef.current = false;
@@ -114,7 +115,6 @@ export function WhatsAppDirectSignalGenerator() {
       setShowQrModal(true);
       setWaStatus("connecting");
       if (forceNew) {
-        // Only clear on explicit refresh so the old QR stays while we generate a new one
         setQrCodeImg(null);
         hasActiveQrRef.current = false;
       }
@@ -135,6 +135,8 @@ export function WhatsAppDirectSignalGenerator() {
           setShowQrModal(false);
           showFeedback("WhatsApp Bot linked successfully!", "success");
         }
+      } else {
+        showFeedback(data.error || "Failed to initialize WhatsApp connection", "error");
       }
     } catch (err) {
       console.error("Failed to connect WhatsApp:", err);
@@ -241,6 +243,15 @@ export function WhatsAppDirectSignalGenerator() {
       clearInterval(statusInterval);
     };
   }, [fetchPrice, checkWhatsAppStatus, selectedGroupId]);
+
+  // Fast polling while QR modal is open so QR appears as soon as worker generates it
+  useEffect(() => {
+    if (!showQrModal || waStatus === "connected") return;
+    const interval = setInterval(() => {
+      checkWhatsAppStatus();
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [showQrModal, waStatus, checkWhatsAppStatus]);
 
 
   const buildQuickSignalMessage = (action: "B" | "S", type: "Call" | "Put", strike: number) => {
