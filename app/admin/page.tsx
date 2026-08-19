@@ -15,7 +15,7 @@ export default async function AdminDashboardPage() {
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Admin Signal Dashboard</h1>
         <p className="text-muted-foreground text-xs sm:text-sm mt-1">
-          Live S&P 500 technical chart study and 1-click WhatsApp signal execution.
+          Live SPX FD technical chart study and 1-click WhatsApp signal execution.
         </p>
       </div>
 

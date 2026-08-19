@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, memo } from 'react';
 
-function LiveSPXWidget() {
+function LiveSPXFDWidget() {
   const container = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -16,7 +16,7 @@ function LiveSPXWidget() {
     script.async = true;
     script.innerHTML = `
       {
-        "symbol": "OANDA:SPX500USD",
+        "symbol": "FOREXCOM:SPXUSD",
         "width": "100%",
         "isTransparent": true,
         "colorTheme": "dark",
@@ -33,4 +33,4 @@ function LiveSPXWidget() {
   );
 }
 
-export const TradingViewChart = memo(LiveSPXWidget);
+export const TradingViewChart = memo(LiveSPXFDWidget);

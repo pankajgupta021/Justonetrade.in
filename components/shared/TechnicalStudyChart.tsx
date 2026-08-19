@@ -55,25 +55,21 @@ function TechnicalStudyChartComponent({
     script.type = "text/javascript";
     script.src = "https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js";
     script.async = true;
-    // CME_MINI:ES1! = S&P 500 E-mini Continuous Futures (trades 24/5, matches SPX options pricing)
     script.innerHTML = JSON.stringify({
       autosize: true,
-      symbol: "CME_MINI:ES1!",
+      symbol: "FOREXCOM:SPXUSD",
       interval: timeframe,
       timezone: "Asia/Kolkata",
       theme: "dark",
       style: "1",
       locale: "en",
       enable_publishing: false,
-      allow_symbol_change: true,
+      allow_symbol_change: false,
       hide_side_toolbar: false,
       hide_top_toolbar: false,
       save_image: false,
       calendar: false,
-      studies: [
-        "STD;RSI",
-        "STD;EMA"
-      ],
+      studies: [],
       support_host: "https://www.tradingview.com",
     });
 
@@ -92,7 +88,7 @@ function TechnicalStudyChartComponent({
           <div className="flex items-center gap-2.5">
             <div className="flex items-center gap-1.5 font-bold text-sm text-foreground tracking-tight">
               <Activity className="h-4 w-4 text-emerald-500" />
-              <span>S&P 500 (SPX)</span>
+              <span>SPX FD</span>
             </div>
             <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 py-0.5">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
