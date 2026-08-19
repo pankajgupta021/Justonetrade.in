@@ -1,15 +1,19 @@
-/**
- * Thin HTTP client for the whatsapp-worker service.
- *
- * All five Vercel WhatsApp API routes use this instead of calling Baileys directly.
- * The admin UI is unchanged — it still hits the same /api/admin/whatsapp/* URLs.
- */
-
 function getWorkerConfig(): { url: string; secret: string } {
-  const url = process.env.WHATSAPP_WORKER_URL || "http://localhost:3001";
-  const secret = process.env.WHATSAPP_WORKER_SECRET || "change_me_to_a_strong_random_secret";
+  let url = process.env.WHATSAPP_WORKER_URL?.trim();
+  const secret = process.env.WHATSAPP_WORKER_SECRET?.trim() || "change_me_to_a_strong_random_secret";
 
-  return { url, secret };
+  if (!url) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error(
+        "WHATSAPP_WORKER_URL is missing in Vercel Environment Variables. Add your Render worker URL (e.g. https://your-service.onrender.com) in Vercel Dashboard."
+      );
+    }
+    url = "http://localhost:3001";
+  }
+
+  const cleanUrl = url.replace(/\/+$/, "");
+
+  return { url: cleanUrl, secret };
 }
 
 interface WorkerResponse {
@@ -28,7 +32,7 @@ interface WorkerResponse {
  * @param path    e.g. "/status"
  * @param method  GET | POST
  * @param body    Optional JSON body for POST requests
- * @param timeoutMs Request timeout in milliseconds (default 15s)
+ * @param timeoutMs Request timeout in milliseconds (default 30s)
  */
 export async function workerRequest(
   path: string,
@@ -40,8 +44,10 @@ export async function workerRequest(
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
+  const endpoint = `${url}${path.startsWith("/") ? path : `/${path}`}`;
+
   try {
-    const res = await fetch(`${url}${path}`, {
+    const res = await fetch(endpoint, {
       method,
       signal: controller.signal,
       headers: {
@@ -51,11 +57,21 @@ export async function workerRequest(
       ...(body ? { body: JSON.stringify(body) } : {}),
     });
 
-    const data = (await res.json()) as WorkerResponse;
+    let data: WorkerResponse;
+    try {
+      data = (await res.json()) as WorkerResponse;
+    } catch {
+      throw new Error(`Worker returned non-JSON response (HTTP ${res.status}: ${res.statusText}) from ${endpoint}`);
+    }
+
+    if (!res.ok) {
+      throw new Error(data.error || `Worker responded with HTTP ${res.status} from ${endpoint}`);
+    }
+
     return data;
   } catch (err) {
     if (err instanceof Error && err.name === "AbortError") {
-      throw new Error(`Worker request to ${path} timed out after ${timeoutMs}ms`);
+      throw new Error(`Worker request to ${endpoint} timed out after ${timeoutMs}ms`);
     }
     throw err;
   } finally {
