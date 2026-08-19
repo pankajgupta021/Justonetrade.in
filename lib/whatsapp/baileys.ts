@@ -29,7 +29,12 @@ class WhatsAppService {
   private logger = pino({ level: "silent" });
 
   constructor() {
-    this.authDir = path.join(process.cwd(), "auth_info_baileys");
+    // In serverless production (Vercel) the only writable dir is /tmp.
+    // In local dev use project root so creds persist across restarts.
+    const isProd = process.env.NODE_ENV === "production" || process.env.VERCEL === "1";
+    this.authDir = isProd
+      ? "/tmp/auth_info_baileys"
+      : path.join(process.cwd(), "auth_info_baileys");
   }
 
   public getStatus(): {

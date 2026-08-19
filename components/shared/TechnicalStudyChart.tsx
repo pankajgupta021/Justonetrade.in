@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Activity, Clock } from "lucide-react";
 
-export type ChartTimeframe = "5" | "15" | "30" | "60" | "240" | "D";
+export type ChartTimeframe = "5" | "15" | "30" | "60" | "120" | "180" | "240" | "D";
 
 interface TechnicalStudyChartProps {
   defaultTimeframe?: ChartTimeframe;
@@ -19,6 +19,8 @@ const timeframes: { label: string; value: ChartTimeframe; tooltip: string }[] = 
   { label: "15m", value: "15", tooltip: "15 Minutes" },
   { label: "30m", value: "30", tooltip: "30 Minutes" },
   { label: "1h", value: "60", tooltip: "1 Hour" },
+  { label: "2h", value: "120", tooltip: "2 Hours" },
+  { label: "3h", value: "180", tooltip: "3 Hours" },
   { label: "4h", value: "240", tooltip: "4 Hours" },
   { label: "1D", value: "D", tooltip: "1 Day" },
 ];
@@ -53,9 +55,10 @@ function TechnicalStudyChartComponent({
     script.type = "text/javascript";
     script.src = "https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js";
     script.async = true;
+    // CME_MINI:ES1! = S&P 500 E-mini Continuous Futures (trades 24/5, matches SPX options pricing)
     script.innerHTML = JSON.stringify({
       autosize: true,
-      symbol: "OANDA:SPX500USD",
+      symbol: "CME_MINI:ES1!",
       interval: timeframe,
       timezone: "Asia/Kolkata",
       theme: "dark",
