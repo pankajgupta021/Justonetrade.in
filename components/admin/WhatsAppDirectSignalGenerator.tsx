@@ -5,19 +5,19 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { 
-  RefreshCw, 
-  Radio, 
-  LogOut, 
-  Zap, 
-  QrCode, 
-  CheckCircle2, 
-  AlertCircle, 
-  Users, 
-  Copy, 
-  Check, 
+import {
+  RefreshCw,
+  Radio,
+  Zap,
+  QrCode,
+  CheckCircle2,
+  AlertCircle,
+  Users,
+  Copy,
+  Check,
   PowerOff,
-  ChevronDown
+  ChevronDown,
+  LogOut
 } from "lucide-react";
 
 interface WhatsAppGroup {
@@ -27,14 +27,12 @@ interface WhatsAppGroup {
 }
 
 export function WhatsAppDirectSignalGenerator() {
-  // SPX & Strike States
-  const [manualStrike, setManualStrike] = useState<number>(5400);
+  const [manualStrike, setManualStrike] = useState<number>(7700);
   const [step, setStep] = useState<number>(10);
   const [livePrice, setLivePrice] = useState<number | null>(null);
   const [isAutoSync, setIsAutoSync] = useState<boolean>(true);
   const [isLoadingPrice, setIsLoadingPrice] = useState<boolean>(false);
 
-  // WhatsApp Bot States
   const [waStatus, setWaStatus] = useState<"disconnected" | "connecting" | "qr_ready" | "connected">("disconnected");
   const [qrCodeImg, setQrCodeImg] = useState<string | null>(null);
   const [connectedNumber, setConnectedNumber] = useState<string | undefined>(undefined);
@@ -43,7 +41,6 @@ export function WhatsAppDirectSignalGenerator() {
   const [isSending, setIsSending] = useState<boolean>(false);
   const [showQrModal, setShowQrModal] = useState<boolean>(false);
 
-  // Feedback & Copy States
   const [statusFeedback, setStatusFeedback] = useState<{
     message: string;
     type: "success" | "error" | "info";
@@ -51,13 +48,12 @@ export function WhatsAppDirectSignalGenerator() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const feedbackTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Helper to round to nearest step
   const roundToNearestStep = (value: number, stepValue: number) => {
     return Math.round(value / stepValue) * stepValue;
   };
 
-  const baseStrike = isAutoSync && livePrice !== null 
-    ? roundToNearestStep(livePrice, step) 
+  const baseStrike = isAutoSync && livePrice !== null
+    ? roundToNearestStep(livePrice, step)
     : manualStrike;
 
   const showFeedback = (message: string, type: "success" | "error" | "info" = "success") => {
@@ -67,10 +63,9 @@ export function WhatsAppDirectSignalGenerator() {
     setStatusFeedback({ message, type });
     feedbackTimeoutRef.current = setTimeout(() => {
       setStatusFeedback(null);
-    }, 5000);
+    }, 4000);
   };
 
-  // Check WhatsApp Bot status
   const checkWhatsAppStatus = useCallback(async () => {
     try {
       const res = await fetch("/api/admin/whatsapp/status");
@@ -82,7 +77,6 @@ export function WhatsAppDirectSignalGenerator() {
         if (data.groups && data.groups.length > 0) {
           setGroups(data.groups);
           if (!selectedGroupId) {
-            // Restore from localStorage or default to first group
             const saved = typeof window !== "undefined" ? localStorage.getItem("selected_whatsapp_group") : null;
             if (saved && data.groups.some((g: WhatsAppGroup) => g.id === saved)) {
               setSelectedGroupId(saved);
@@ -97,7 +91,6 @@ export function WhatsAppDirectSignalGenerator() {
     }
   }, [selectedGroupId]);
 
-  // Connect WhatsApp session
   const handleConnectWhatsApp = async () => {
     try {
       setShowQrModal(true);
@@ -114,7 +107,6 @@ export function WhatsAppDirectSignalGenerator() {
     }
   };
 
-  // Disconnect WhatsApp session
   const handleDisconnectWhatsApp = async () => {
     try {
       await fetch("/api/admin/whatsapp/disconnect", { method: "POST" });
@@ -129,7 +121,6 @@ export function WhatsAppDirectSignalGenerator() {
     }
   };
 
-  // Fetch groups
   const handleRefreshGroups = async () => {
     try {
       const res = await fetch("/api/admin/whatsapp/groups");
@@ -142,8 +133,6 @@ export function WhatsAppDirectSignalGenerator() {
       console.error("Failed to refresh groups:", err);
     }
   };
-
-  // Set selected group and save to localStorage
   const handleSelectGroup = (groupId: string) => {
     setSelectedGroupId(groupId);
     if (typeof window !== "undefined") {
@@ -151,35 +140,61 @@ export function WhatsAppDirectSignalGenerator() {
     }
   };
 
-  // Poll price & WhatsApp status
+  const fetchPrice = useCallback(async (showLoading = false) => {
+    if (showLoading) setIsLoadingPrice(true);
+    try {
+      const res = await fetch("/api/admin/spx-price", { cache: "no-store" });
+      const data = await res.json();
+      if (data.price) {
+        setLivePrice(data.price);
+      }
+    } catch (error) {
+      console.error("Failed to fetch SPX price:", error);
+    } finally {
+      if (showLoading) setIsLoadingPrice(false);
+    }
+  }, []);
+
   useEffect(() => {
     let isMounted = true;
 
-    const fetchPrice = async () => {
-      setIsLoadingPrice(true);
+    const initialLoad = async () => {
       try {
-        const res = await fetch("/api/admin/spx-price");
-        const data = await res.json();
-        if (isMounted && data.price) {
-          setLivePrice(data.price);
-        }
-      } catch (error) {
-        console.error("Failed to fetch SPX price:", error);
-      } finally {
+        const [priceRes, statusRes] = await Promise.allSettled([
+          fetch("/api/admin/spx-price", { cache: "no-store" }).then((r) => r.json()),
+          fetch("/api/admin/whatsapp/status").then((r) => r.json()),
+        ]);
+
         if (isMounted) {
-          setIsLoadingPrice(false);
+          if (priceRes.status === "fulfilled" && priceRes.value?.price) {
+            setLivePrice(priceRes.value.price);
+          }
+          if (statusRes.status === "fulfilled" && statusRes.value?.success) {
+            const data = statusRes.value;
+            setWaStatus(data.status);
+            setQrCodeImg(data.qrCode);
+            setConnectedNumber(data.connectedNumber);
+            if (data.groups && data.groups.length > 0) {
+              setGroups(data.groups);
+              if (!selectedGroupId) {
+                const saved = typeof window !== "undefined" ? localStorage.getItem("selected_whatsapp_group") : null;
+                if (saved && data.groups.some((g: WhatsAppGroup) => g.id === saved)) {
+                  setSelectedGroupId(saved);
+                } else {
+                  setSelectedGroupId(data.groups[0].id);
+                }
+              }
+            }
+          }
         }
+      } catch (err) {
+        console.error("Error during initial poll:", err);
       }
     };
 
-    const runPolls = async () => {
-      await fetchPrice();
-      await checkWhatsAppStatus();
-    };
+    initialLoad();
 
-    runPolls();
-
-    const priceInterval = setInterval(fetchPrice, 15000);
+    const priceInterval = setInterval(() => fetchPrice(false), 5000);
     const statusInterval = setInterval(checkWhatsAppStatus, 5000);
 
     return () => {
@@ -187,34 +202,19 @@ export function WhatsAppDirectSignalGenerator() {
       clearInterval(priceInterval);
       clearInterval(statusInterval);
     };
-  }, [checkWhatsAppStatus]);
+  }, [fetchPrice, checkWhatsAppStatus, selectedGroupId]);
 
-  const handleManualPriceRefresh = async () => {
-    setIsLoadingPrice(true);
-    try {
-      const res = await fetch("/api/admin/spx-price");
-      const data = await res.json();
-      if (data.price) {
-        setLivePrice(data.price);
-      }
-    } catch (error) {
-      console.error("Failed to fetch live SPX price:", error);
-    } finally {
-      setIsLoadingPrice(false);
-    }
-  };
 
   const buildQuickSignalMessage = (action: "B" | "S", type: "Call" | "Put", strike: number) => {
-    const actionText = action === "B" ? "BUY" : "SELL";
-    const emoji = action === "B" ? "🟢" : "🔴";
-    return `📚 *TECHNICAL ANALYSIS CHART INSIGHT* 📚\n\n${emoji} *Action:* ${actionText}\n📈 *Symbol:* SPX\n🎯 *Strike:* ${strike}\n⚡ *Type:* ${type}\n\n_Educational study only. Practice analyzing this chart setup._`;
+    const actionWord = action === "B" ? "Buy" : "Sell";
+    const typeWord = type.toLowerCase();
+    return `${actionWord} spx ${strike} ${typeWord}`;
   };
 
   const buildExitSignalMessage = () => {
-    return `📚 *TECHNICAL ANALYSIS CHART INSIGHT* 📚\n\n🚨 *Action:* EXIT ALL POSITIONS\n📈 *Symbol:* SPX\n\n_Educational study only. Practice analyzing this chart setup._`;
+    return `Exit spx`;
   };
 
-  // Direct 1-Click Send into WhatsApp Group
   const handleDirectSendSignal = async (message: string) => {
     if (waStatus !== "connected") {
       showFeedback("WhatsApp Bot is not connected! Click 'Connect WhatsApp' to link.", "error");
@@ -223,7 +223,7 @@ export function WhatsAppDirectSignalGenerator() {
     }
 
     if (!selectedGroupId) {
-      showFeedback("Please select a target WhatsApp Group from the dropdown above.", "error");
+      showFeedback("Please select a target WhatsApp Group from the dropdown.", "error");
       return;
     }
 
@@ -243,7 +243,7 @@ export function WhatsAppDirectSignalGenerator() {
 
       if (data.success) {
         const groupName = groups.find((g) => g.id === selectedGroupId)?.name || "WhatsApp Group";
-        showFeedback(`⚡ Posted directly into "${groupName}"!`, "success");
+        showFeedback(`⚡ Sent: "${message}" to ${groupName}!`, "success");
       } else {
         showFeedback(data.error || "Failed to post signal", "error");
       }
@@ -260,7 +260,7 @@ export function WhatsAppDirectSignalGenerator() {
     try {
       await navigator.clipboard.writeText(message);
       setCopiedId(id);
-      showFeedback("📋 Message copied to clipboard!", "success");
+      showFeedback(`📋 Copied: "${message}"`, "success");
       setTimeout(() => setCopiedId(null), 2000);
     } catch (err) {
       console.error("Failed to copy:", err);
@@ -281,21 +281,23 @@ export function WhatsAppDirectSignalGenerator() {
     baseStrike - step * 3,
   ];
 
+  const exitMessage = buildExitSignalMessage();
+
   return (
-    <Card className="flex flex-col border-primary/20 shadow-xl max-w-xl mx-auto w-full">
+    <Card className="flex flex-col border-primary/20 shadow-xl w-full">
       <CardHeader className="pb-3 border-b">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Zap className="h-5 w-5 text-amber-500 fill-amber-500" />
             <CardTitle className="text-base font-bold">1-Click Direct WhatsApp Signals</CardTitle>
           </div>
-          
+
           {/* WhatsApp Connection Badge */}
           {waStatus === "connected" ? (
             <div className="flex items-center gap-2">
-              <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 flex items-center gap-1.5 px-2 py-0.5">
+              <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 flex items-center gap-1.5 px-2 py-0.5 text-xs font-semibold">
                 <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                Bot Linked {connectedNumber ? `(+${connectedNumber})` : ""}
+                Linked {connectedNumber ? `(+${connectedNumber})` : ""}
               </Badge>
               <Button
                 variant="ghost"
@@ -312,7 +314,7 @@ export function WhatsAppDirectSignalGenerator() {
               size="sm"
               variant="outline"
               onClick={handleConnectWhatsApp}
-              className="h-7 text-xs bg-amber-500/10 text-amber-600 border-amber-500/30 hover:bg-amber-500/20"
+              className="h-7 text-xs bg-amber-500/10 text-amber-600 border-amber-500/30 hover:bg-amber-500/20 font-semibold"
             >
               <QrCode className="w-3.5 h-3.5 mr-1" />
               Connect WhatsApp Bot
@@ -356,97 +358,38 @@ export function WhatsAppDirectSignalGenerator() {
           </div>
         ) : (
           <CardDescription className="text-xs text-amber-600/90 dark:text-amber-400/90 mt-1">
-            ⚠️ Scan the QR code once to enable instant 1-click posting directly to your WhatsApp subscribers group.
+            ⚠️ Scan QR code once to link your WhatsApp and post signals directly to your subscribers group.
           </CardDescription>
+        )}
+
+        {/* Dynamic Feedback Banner */}
+        {statusFeedback && (
+          <div className={`flex items-center justify-between text-xs px-3 py-2 rounded-md border animate-in fade-in slide-in-from-top-1 duration-200 mt-2 ${statusFeedback.type === "success"
+            ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20"
+            : statusFeedback.type === "error"
+              ? "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20"
+              : "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20"
+            }`}>
+            <div className="flex items-center gap-1.5">
+              {statusFeedback.type === "success" ? (
+                <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-500" />
+              ) : (
+                <AlertCircle className="w-4 h-4 shrink-0 text-red-500" />
+              )}
+              <span className="font-semibold">{statusFeedback.message}</span>
+            </div>
+            <button
+              onClick={() => setStatusFeedback(null)}
+              className="opacity-70 hover:opacity-100 ml-2 text-xs font-bold"
+            >
+              ✕
+            </button>
+          </div>
         )}
       </CardHeader>
 
-      <CardContent className="p-4 flex flex-col gap-3">
-        {/* SPX Price & Controls Bar */}
-        <div className="flex flex-col gap-2 border-b pb-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Radio className={`h-4 w-4 ${isAutoSync ? "text-green-500 animate-pulse" : "text-muted-foreground"}`} />
-              <span className="text-xs font-semibold text-muted-foreground">
-                {livePrice ? `Live SPX: $${livePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "Fetching live SPX..."}
-              </span>
-            </div>
-            <div className="flex gap-2">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={handleManualPriceRefresh} 
-                disabled={isLoadingPrice}
-                className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                title="Refresh Live SPX"
-              >
-                <RefreshCw className={`h-3.5 w-3.5 ${isLoadingPrice ? "animate-spin" : ""}`} />
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => setIsAutoSync(!isAutoSync)}
-                className={`h-7 text-xs font-semibold px-2 ${isAutoSync ? "bg-green-500/10 text-green-600 border-green-500/20 hover:bg-green-500/20 hover:text-green-700" : ""}`}
-              >
-                {isAutoSync ? "Auto-Sync ON" : "Manual Mode"}
-              </Button>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-2 flex-1">
-              <span className="text-xs font-bold uppercase text-muted-foreground">Round Off SPX:</span>
-              <Input 
-                type="number" 
-                value={baseStrike} 
-                onChange={(e) => {
-                  if (!isAutoSync) {
-                    setManualStrike(Number(e.target.value));
-                  }
-                }}
-                disabled={isAutoSync}
-                className={`font-bold text-lg h-9 w-full text-center ${isAutoSync ? "bg-muted cursor-not-allowed opacity-90 border-none" : "bg-primary/10 border-primary/30"}`}
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold uppercase text-muted-foreground">Step:</span>
-              <Input 
-                type="number" 
-                value={step} 
-                onChange={(e) => setStep(Number(e.target.value))}
-                className="font-bold text-sm h-9 w-16 text-center"
-              />
-            </div>
-          </div>
-
-          {/* Dynamic Feedback Banner */}
-          {statusFeedback && (
-            <div className={`flex items-center justify-between text-xs px-3 py-2 rounded-md border animate-in fade-in slide-in-from-top-1 duration-200 mt-1 ${
-              statusFeedback.type === "success" 
-                ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20" 
-                : statusFeedback.type === "error"
-                ? "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20"
-                : "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20"
-            }`}>
-              <div className="flex items-center gap-1.5">
-                {statusFeedback.type === "success" ? (
-                  <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-500" />
-                ) : (
-                  <AlertCircle className="w-4 h-4 shrink-0 text-red-500" />
-                )}
-                <span className="font-semibold">{statusFeedback.message}</span>
-              </div>
-              <button 
-                onClick={() => setStatusFeedback(null)} 
-                className="opacity-70 hover:opacity-100 ml-2 text-xs font-bold"
-              >
-                ✕
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* CALL SECTION */}
+      <CardContent className="p-3.5 flex flex-col gap-3">
+        {/* 1. CALL STRIKES (TOP) */}
         <div className="bg-blue-500/5 p-2 rounded-lg border border-blue-500/20">
           <div className="flex items-center justify-between px-2 pb-1 mb-1 border-b border-blue-500/10 text-[11px] font-bold text-blue-600 dark:text-blue-400">
             <span>CALL STRIKES (BUY / SELL)</span>
@@ -459,24 +402,24 @@ export function WhatsAppDirectSignalGenerator() {
               const rowId = `call-${strike}-${i}`;
 
               return (
-                <div key={rowId} className="flex items-center justify-between px-2 py-1.5 rounded-md hover:bg-slate-50 dark:hover:bg-slate-900/60 transition-colors">
-                  <span className="font-mono font-bold text-base text-foreground/80 w-16">{strike}</span>
+                <div key={rowId} className="flex items-center justify-between px-2 py-1 rounded-md hover:bg-slate-50 dark:hover:bg-slate-900/60 transition-colors">
+                  <span className="font-mono font-bold text-base text-foreground/90 w-16">{strike}</span>
                   <div className="flex items-center gap-1.5">
-                    <Button 
-                      size="sm" 
-                      onClick={() => handleDirectSendSignal(buyMsg)} 
+                    <Button
+                      size="sm"
+                      onClick={() => handleDirectSendSignal(buyMsg)}
                       disabled={isSending}
-                      className="bg-green-600 hover:bg-green-700 text-white w-12 h-7 text-xs font-bold shadow-sm"
-                      title="Post BUY Call directly to WhatsApp Group"
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white w-11 h-7 text-xs font-bold shadow-sm"
+                      title={`Send: "${buyMsg}"`}
                     >
                       B
                     </Button>
-                    <Button 
-                      size="sm" 
-                      onClick={() => handleDirectSendSignal(sellMsg)} 
+                    <Button
+                      size="sm"
+                      onClick={() => handleDirectSendSignal(sellMsg)}
                       disabled={isSending}
-                      className="bg-red-600 hover:bg-red-700 text-white w-12 h-7 text-xs font-bold shadow-sm"
-                      title="Post SELL Call directly to WhatsApp Group"
+                      className="bg-red-600 hover:bg-red-700 text-white w-11 h-7 text-xs font-bold shadow-sm"
+                      title={`Send: "${sellMsg}"`}
                     >
                       S
                     </Button>
@@ -485,7 +428,7 @@ export function WhatsAppDirectSignalGenerator() {
                       variant="ghost"
                       onClick={() => handleCopyOnly(buyMsg, `${rowId}-copy`)}
                       className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                      title="Copy text only"
+                      title="Copy text"
                     >
                       {copiedId === `${rowId}-copy` ? (
                         <Check className="h-3.5 w-3.5 text-emerald-500" />
@@ -500,34 +443,96 @@ export function WhatsAppDirectSignalGenerator() {
           </div>
         </div>
 
-        {/* MIDDLE: EXIT ALL POSITIONS BUTTON */}
-        <div className="w-full my-1">
-          <div className="flex gap-1.5 items-center">
-            <Button 
-              onClick={() => handleDirectSendSignal(buildExitSignalMessage())} 
-              disabled={isSending}
-              className="flex-1 bg-slate-800 hover:bg-slate-900 text-white font-bold h-10 shadow-md border border-slate-700 transition-transform active:scale-[0.99]"
+        <div className="p-2.5 rounded-lg border border-border bg-muted/40 shadow-sm flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+          <div className="flex flex-wrap items-center gap-2 flex-1">
+            <div className="flex items-center gap-1.5 px-2.5 py-1 bg-background rounded-md border text-xs font-bold shrink-0">
+              <Radio className={`h-3.5 w-3.5 ${isAutoSync ? "text-emerald-500 animate-pulse" : "text-muted-foreground"}`} />
+              <span className="text-muted-foreground text-[11px]">SPX:</span>
+              <span className="text-foreground">
+                {livePrice ? `$${livePrice.toFixed(2)}` : "..."}
+              </span>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => fetchPrice(true)}
+                disabled={isLoadingPrice}
+                className="h-5 w-5 text-muted-foreground hover:text-foreground ml-0.5 p-0"
+                title="Refresh Live SPX Price"
+              >
+                <RefreshCw className={`h-3 w-3 ${isLoadingPrice ? "animate-spin" : ""}`} />
+              </Button>
+            </div>
+
+            {/* Round Off Input */}
+            <div className="flex items-center gap-1">
+              <span className="text-[11px] font-bold text-muted-foreground uppercase whitespace-nowrap">Round:</span>
+              <Input
+                type="number"
+                value={baseStrike}
+                onChange={(e) => {
+                  if (!isAutoSync) {
+                    setManualStrike(Number(e.target.value));
+                  }
+                }}
+                disabled={isAutoSync}
+                className={`font-mono font-bold text-sm h-8 w-20 text-center px-1 ${isAutoSync
+                  ? "bg-background border-border cursor-not-allowed font-extrabold text-primary"
+                  : "bg-primary/10 border-primary/40"
+                  }`}
+                title="Base / Round Off Strike"
+              />
+            </div>
+
+            <div className="flex items-center gap-1">
+              <span className="text-[11px] font-bold text-muted-foreground uppercase whitespace-nowrap">Step:</span>
+              <Input
+                type="number"
+                value={step}
+                onChange={(e) => setStep(Number(e.target.value))}
+                className="font-mono font-bold text-xs h-8 w-14 text-center px-1 bg-background border-border"
+                title="Strike Step (e.g. 10)"
+              />
+            </div>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsAutoSync(!isAutoSync)}
+              className={`h-8 text-[11px] font-bold px-2 ${isAutoSync
+                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
+                : "bg-background text-muted-foreground"
+                }`}
             >
-              <LogOut className="w-4 h-4 mr-2" />
-              EXIT ALL POSITIONS (DIRECT TO GROUP)
+              {isAutoSync ? "Auto ON" : "Manual"}
+            </Button>
+          </div>
+
+          <div className="flex items-center gap-1 shrink-0">
+            <Button
+              onClick={() => handleDirectSendSignal(exitMessage)}
+              disabled={isSending}
+              className="bg-red-600 hover:bg-red-700 text-white font-bold h-8 px-3 text-xs shadow-md border border-red-500 transition-transform active:scale-[0.98]"
+              title={`Send: "${exitMessage}"`}
+            >
+              <LogOut className="w-3.5 h-3.5 mr-1.5" />
+              EXIT SPX
             </Button>
             <Button
               size="icon"
               variant="outline"
-              onClick={() => handleCopyOnly(buildExitSignalMessage(), "exit-copy")}
-              className="h-10 w-10 border-slate-700 text-muted-foreground hover:text-foreground shrink-0"
+              onClick={() => handleCopyOnly(exitMessage, "exit-copy")}
+              className="h-8 w-8 border-border text-muted-foreground hover:text-foreground shrink-0"
               title="Copy Exit Signal"
             >
               {copiedId === "exit-copy" ? (
-                <Check className="h-4 w-4 text-emerald-500" />
+                <Check className="h-3.5 w-3.5 text-emerald-500" />
               ) : (
-                <Copy className="h-4 w-4" />
+                <Copy className="h-3.5 w-3.5" />
               )}
             </Button>
           </div>
         </div>
 
-        {/* PUT SECTION */}
         <div className="bg-orange-500/5 p-2 rounded-lg border border-orange-500/20">
           <div className="flex items-center justify-between px-2 pb-1 mb-1 border-b border-orange-500/10 text-[11px] font-bold text-orange-600 dark:text-orange-400">
             <span>PUT STRIKES (BUY / SELL)</span>
@@ -540,24 +545,24 @@ export function WhatsAppDirectSignalGenerator() {
               const rowId = `put-${strike}-${i}`;
 
               return (
-                <div key={rowId} className="flex items-center justify-between px-2 py-1.5 rounded-md hover:bg-slate-50 dark:hover:bg-slate-900/60 transition-colors">
-                  <span className="font-mono font-bold text-base text-foreground/80 w-16">{strike}</span>
+                <div key={rowId} className="flex items-center justify-between px-2 py-1 rounded-md hover:bg-slate-50 dark:hover:bg-slate-900/60 transition-colors">
+                  <span className="font-mono font-bold text-base text-foreground/90 w-16">{strike}</span>
                   <div className="flex items-center gap-1.5">
-                    <Button 
-                      size="sm" 
-                      onClick={() => handleDirectSendSignal(buyMsg)} 
+                    <Button
+                      size="sm"
+                      onClick={() => handleDirectSendSignal(buyMsg)}
                       disabled={isSending}
-                      className="bg-green-600 hover:bg-green-700 text-white w-12 h-7 text-xs font-bold shadow-sm"
-                      title="Post BUY Put directly to WhatsApp Group"
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white w-11 h-7 text-xs font-bold shadow-sm"
+                      title={`Send: "${buyMsg}"`}
                     >
                       B
                     </Button>
-                    <Button 
-                      size="sm" 
-                      onClick={() => handleDirectSendSignal(sellMsg)} 
+                    <Button
+                      size="sm"
+                      onClick={() => handleDirectSendSignal(sellMsg)}
                       disabled={isSending}
-                      className="bg-red-600 hover:bg-red-700 text-white w-12 h-7 text-xs font-bold shadow-sm"
-                      title="Post SELL Put directly to WhatsApp Group"
+                      className="bg-red-600 hover:bg-red-700 text-white w-11 h-7 text-xs font-bold shadow-sm"
+                      title={`Send: "${sellMsg}"`}
                     >
                       S
                     </Button>
@@ -566,7 +571,7 @@ export function WhatsAppDirectSignalGenerator() {
                       variant="ghost"
                       onClick={() => handleCopyOnly(buyMsg, `${rowId}-copy`)}
                       className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                      title="Copy text only"
+                      title="Copy text"
                     >
                       {copiedId === `${rowId}-copy` ? (
                         <Check className="h-3.5 w-3.5 text-emerald-500" />
@@ -581,7 +586,6 @@ export function WhatsAppDirectSignalGenerator() {
           </div>
         </div>
 
-        {/* QR Code Modal / Card Overlay */}
         {showQrModal && waStatus !== "connected" && (
           <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <Card className="max-w-sm w-full border-primary/30 shadow-2xl p-4 flex flex-col items-center gap-3">
@@ -589,7 +593,7 @@ export function WhatsAppDirectSignalGenerator() {
                 <div className="flex items-center gap-2 font-bold text-sm">
                   <QrCode className="w-4 h-4 text-primary" /> Scan WhatsApp QR
                 </div>
-                <button 
+                <button
                   onClick={() => setShowQrModal(false)}
                   className="text-xs font-bold text-muted-foreground hover:text-foreground"
                 >
@@ -619,16 +623,16 @@ export function WhatsAppDirectSignalGenerator() {
               </div>
 
               <div className="flex gap-2 w-full mt-1">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={handleConnectWhatsApp}
                   className="flex-1 text-xs"
                 >
                   <RefreshCw className="w-3 h-3 mr-1" /> Refresh QR
                 </Button>
-                <Button 
-                  size="sm" 
+                <Button
+                  size="sm"
                   onClick={() => setShowQrModal(false)}
                   className="flex-1 text-xs"
                 >

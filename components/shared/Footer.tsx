@@ -15,10 +15,10 @@ export function Footer() {
               Premium technical analysis and educational chart studies for SPX Index Options, delivered straight to your WhatsApp.
             </p>
             <div className="p-4 bg-muted rounded-lg text-xs text-muted-foreground">
-              <strong>Disclaimer:</strong> JustOneTrade.in provides educational technical analysis and chart studies only. We are not SEBI registered advisors. We do not provide buy/sell recommendations, trade signals, execution services, or personalized financial advice. All analysis is for learning purposes only. Trading involves significant risk.
+              <strong>Disclaimer:</strong> JustOneTrade.in provides educational technical analysis and chart studies only. We are not SEBI registered advisors. We do not provide buy/sell recommendations, trade signals, execution services, or personalized financial advice. All analysis is for learning purposes only.
             </div>
           </div>
-          
+
           <div>
             <h3 className="font-semibold mb-4">Platform</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
@@ -27,7 +27,7 @@ export function Footer() {
               <li><Link href="/#faq" className="hover:text-foreground transition-colors">FAQ</Link></li>
             </ul>
           </div>
-          
+
           <div>
             <h3 className="font-semibold mb-4">Legal</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
@@ -37,7 +37,7 @@ export function Footer() {
             </ul>
           </div>
         </div>
-        
+
         <div className="mt-12 pt-8 border-t text-center text-sm text-muted-foreground">
           <p>&copy; {new Date().getFullYear()} JustOneTrade.in. All rights reserved.</p>
         </div>

@@ -16,7 +16,7 @@ export async function Navbar() {
             <span className="font-bold tracking-tight">JustOneTrade.in</span>
           </Link>
         </div>
-        
+
         <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
           <Link href="/" className="transition-colors hover:text-foreground/80">Home</Link>
           <Link href="/#about-us" className="transition-colors hover:text-foreground/80">About Us</Link>

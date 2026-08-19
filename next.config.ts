@@ -2,14 +2,12 @@ import type { NextConfig } from "next";
 
 const ContentSecurityPolicy = [
   "default-src 'self'",
-  // Next.js requires 'unsafe-inline' for its injected scripts/styles; tighten with nonces in future
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.razorpay.com https://s3.tradingview.com",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.razorpay.com https://s3.tradingview.com https://*.tradingview.com https://www.tradingview.com https://*.tradingview-widget.com https://tradingview-widget.com",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com",
-  // API calls: Razorpay, Formspree, Yahoo Finance (admin SPX price), WhatsApp Baileys CDN
-  "connect-src 'self' https://api.razorpay.com https://formspree.io https://query1.finance.yahoo.com https://web.whatsapp.com",
-  "img-src 'self' data: blob: https:",
-  "frame-src https://api.razorpay.com",
+  "connect-src 'self' https://api.razorpay.com https://formspree.io https://query1.finance.yahoo.com https://web.whatsapp.com https://*.tradingview.com wss://*.tradingview.com https://s3.tradingview.com https://*.tradingview-widget.com wss://*.tradingview-widget.com https://tradingview-widget.com",
+  "img-src 'self' data: blob: https: https://*.tradingview.com https://*.tradingview-widget.com",
+  "frame-src 'self' https://api.razorpay.com https://www.tradingview.com https://*.tradingview.com https://s.tradingview.com https://*.tradingview-widget.com https://tradingview-widget.com https://www.tradingview-widget.com https://s.tradingview-widget.com",
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self' https://formspree.io",

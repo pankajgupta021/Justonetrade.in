@@ -3,7 +3,8 @@
 import { motion } from "framer-motion";
 import { buttonVariants } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowRight, BarChart2 } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+import { TechnicalStudyChart } from "@/components/shared/TechnicalStudyChart";
 
 export function Hero() {
   return (
@@ -54,28 +55,14 @@ export function Hero() {
             </Link>
           </motion.div>
 
-          {/* Minimal visual representation */}
+          {/* Live Technical Analysis Study Chart */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
+            initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.7, delay: 0.5 }}
-            className="w-full mt-16 max-w-3xl mx-auto relative rounded-2xl border bg-card p-2 shadow-2xl overflow-hidden"
+            transition={{ duration: 0.6, delay: 0.4 }}
+            className="w-full mt-14 max-w-4xl mx-auto"
           >
-            <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent z-10 bottom-0 h-1/2 pointer-events-none" />
-            <div className="rounded-xl border bg-muted/20 p-6 flex flex-col gap-4 relative z-0 h-[250px] overflow-hidden">
-              <div className="flex justify-between items-center border-b pb-4">
-                <div className="flex items-center gap-2">
-                  <BarChart2 className="h-5 w-5 text-muted-foreground" />
-                  <span className="font-semibold">Technical Analysis Study</span>
-                </div>
-                <span className="text-xs text-muted-foreground">10:15 AM</span>
-              </div>
-              <div className="space-y-4 pt-2">
-                <div className="h-4 w-1/3 bg-muted rounded"></div>
-                <div className="h-10 w-full bg-muted rounded"></div>
-                <div className="h-4 w-2/3 bg-muted rounded"></div>
-              </div>
-            </div>
+            <TechnicalStudyChart defaultTimeframe="5" height={480} />
           </motion.div>
         </div>
       </div>
