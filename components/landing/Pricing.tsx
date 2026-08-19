@@ -16,7 +16,7 @@ export function Pricing() {
             Transparent Pricing
           </Badge>
           <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-4">
-            Flexible Plans for Every Trader
+            Flexible Plans for Every Trainee/Trader
           </h2>
           <p className="text-muted-foreground">
             Start with our 2-day free trial or choose a monthly or yearly pass. No hidden fees.
