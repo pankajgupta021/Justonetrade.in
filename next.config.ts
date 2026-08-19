@@ -46,7 +46,8 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ["@whiskeysockets/baileys", "jimp", "pino", "qrcode"],
+  // Note: @whiskeysockets/baileys has been moved to the standalone whatsapp-worker.
+  // It is no longer imported by any Next.js server code.
   async headers() {
     return [
       {

@@ -1,19 +1,7 @@
 {
   "functions": {
     "app/api/admin/whatsapp/connect/route.ts": {
-      "maxDuration": 60
-    },
-    "app/api/admin/whatsapp/status/route.ts": {
-      "maxDuration": 30
-    },
-    "app/api/admin/whatsapp/send/route.ts": {
-      "maxDuration": 30
-    },
-    "app/api/admin/whatsapp/disconnect/route.ts": {
-      "maxDuration": 30
-    },
-    "app/api/admin/whatsapp/groups/route.ts": {
-      "maxDuration": 30
+      "maxDuration": 25
     }
   }
 }

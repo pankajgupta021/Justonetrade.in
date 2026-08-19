@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireRole } from "@/lib/auth/authorization";
-import { whatsAppService } from "@/lib/whatsapp/baileys";
+import { workerRequest } from "@/lib/whatsapp/worker-client";
 
 export const dynamic = "force-dynamic";
 
@@ -12,24 +12,22 @@ export async function POST(req: NextRequest) {
     let forceNew = false;
     try {
       const body = await req.json();
-      if (body?.forceNew) {
-        forceNew = true;
-      }
+      if (body?.forceNew) forceNew = true;
     } catch {
-      // Body is optional
+      // body is optional
     }
 
-    const initResult = await whatsAppService.initialize(forceNew);
-    const currentStatus = await whatsAppService.getStatus();
+    const data = await workerRequest("/connect", "POST", { forceNew }, 20_000);
 
     return NextResponse.json({
       success: true,
-      ...currentStatus,
-      status: initResult.status || currentStatus.status,
-      qrCode: initResult.qrCode || currentStatus.qrCode,
+      status: data.status,
+      qrCode: data.qrCode ?? null,
+      groups: data.groups ?? [],
+      connectedNumber: data.connectedNumber,
     });
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Failed to connect";
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Failed to connect";
     return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }
