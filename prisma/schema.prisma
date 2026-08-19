@@ -87,8 +87,7 @@ model PaymentTransaction {
   user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-// Single-row table (key = "singleton") used to share WhatsApp connection
-// state across Vercel serverless function cold starts.
+
 model WhatsAppState {
   key              String   @id @default("singleton")
   status           String   @default("disconnected")
@@ -96,4 +95,10 @@ model WhatsAppState {
   connectedNumber  String?
   groupsJson       String?  @db.Text
   updatedAt        DateTime @updatedAt
+}
+
+model WhatsAppAuth {
+  key       String @id
+  value     String @db.Text
+  updatedAt DateTime @updatedAt
 }
