@@ -1,9 +1,9 @@
 import makeWASocket, {
-  useMultiFileAuthState,
+  useMultiFileAuthState as getMultiFileAuthState,
   DisconnectReason,
   fetchLatestBaileysVersion,
-  WASocket,
-  GroupMetadata,
+  type WASocket,
+  type GroupMetadata,
 } from "@whiskeysockets/baileys";
 import pino from "pino";
 import QRCode from "qrcode";
@@ -51,25 +51,33 @@ class WhatsAppService {
     };
   }
 
-  public async initialize(): Promise<void> {
-    if (this.sock && this.status === "connected") {
-      return;
+  public async initialize(forceNew: boolean = false): Promise<{
+    status: WhatsAppStatus;
+    qrCode: string | null;
+  }> {
+    if (this.sock && this.status === "connected" && !forceNew) {
+      return { status: "connected", qrCode: null };
+    }
+
+    if (forceNew) {
+      await this.disconnect();
     }
 
     if (this.isInitializing) {
-      return;
+      return this.waitForQrOrConnected(4000);
     }
 
     this.isInitializing = true;
     this.status = "connecting";
+    this.qrCodeDataUrl = null;
+    this.rawQr = null;
 
     try {
       if (!fs.existsSync(this.authDir)) {
         fs.mkdirSync(this.authDir, { recursive: true });
       }
 
-      // eslint-disable-next-line react-hooks/rules-of-hooks
-      const { state, saveCreds } = await useMultiFileAuthState(this.authDir);
+      const { state, saveCreds } = await getMultiFileAuthState(this.authDir);
       const { version } = await fetchLatestBaileysVersion();
 
       this.sock = makeWASocket({
@@ -106,27 +114,55 @@ class WhatsAppService {
         } else if (connection === "close") {
           const boomError = lastDisconnect?.error as { output?: { statusCode?: number } } | undefined;
           const statusCode = boomError?.output?.statusCode;
-          const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
+          const isLoggedOut =
+            statusCode === DisconnectReason.loggedOut ||
+            statusCode === DisconnectReason.badSession ||
+            statusCode === 401 ||
+            statusCode === 403;
 
-          console.log(`WhatsApp connection closed. Status code: ${statusCode}, shouldReconnect: ${shouldReconnect}`);
+          console.log(`WhatsApp connection closed. Status code: ${statusCode}, isLoggedOut: ${isLoggedOut}`);
+
           this.status = "disconnected";
           this.sock = null;
           this.isInitializing = false;
 
-          if (shouldReconnect) {
-            setTimeout(() => {
-              this.initialize().catch(console.error);
-            }, 3000);
+          if (isLoggedOut) {
+            this.qrCodeDataUrl = null;
+            this.rawQr = null;
+            try {
+              if (fs.existsSync(this.authDir)) {
+                fs.rmSync(this.authDir, { recursive: true, force: true });
+              }
+            } catch (err) {
+              console.error("Error clearing auth directory:", err);
+            }
           }
         }
       });
+
+      this.isInitializing = false;
+      return await this.waitForQrOrConnected(5000);
     } catch (error) {
       console.error("Error initializing WhatsApp Baileys socket:", error);
       this.status = "disconnected";
       this.sock = null;
-    } finally {
       this.isInitializing = false;
+      return { status: "disconnected", qrCode: null };
     }
+  }
+
+  private async waitForQrOrConnected(maxWaitMs: number = 4000): Promise<{
+    status: WhatsAppStatus;
+    qrCode: string | null;
+  }> {
+    const startTime = Date.now();
+    while (Date.now() - startTime < maxWaitMs) {
+      if (this.status === "connected" || (this.status === "qr_ready" && this.qrCodeDataUrl)) {
+        return { status: this.status, qrCode: this.qrCodeDataUrl };
+      }
+      await new Promise((res) => setTimeout(res, 200));
+    }
+    return { status: this.status, qrCode: this.qrCodeDataUrl };
   }
 
   public async refreshGroups(): Promise<WhatsAppGroupInfo[]> {
@@ -156,7 +192,6 @@ class WhatsAppService {
     }
 
     try {
-      // Ensure target recipient JID format (groups end with @g.us, contacts with @s.whatsapp.net)
       let recipientJid = to.trim();
       if (!recipientJid.includes("@")) {
         recipientJid = `${recipientJid}@g.us`;
@@ -177,13 +212,14 @@ class WhatsAppService {
         await this.sock.logout();
       }
     } catch (error) {
-      console.error("Error during WhatsApp logout:", error);
+      console.warn("Error during WhatsApp logout (safe to ignore):", error);
     } finally {
       this.status = "disconnected";
       this.sock = null;
       this.qrCodeDataUrl = null;
       this.rawQr = null;
       this.groupsCache = [];
+      this.isInitializing = false;
       try {
         if (fs.existsSync(this.authDir)) {
           fs.rmSync(this.authDir, { recursive: true, force: true });

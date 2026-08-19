@@ -68,12 +68,17 @@ export function WhatsAppDirectSignalGenerator() {
 
   const checkWhatsAppStatus = useCallback(async () => {
     try {
-      const res = await fetch("/api/admin/whatsapp/status");
+      const res = await fetch("/api/admin/whatsapp/status", { cache: "no-store" });
       const data = await res.json();
       if (data.success) {
         setWaStatus(data.status);
         setQrCodeImg(data.qrCode);
         setConnectedNumber(data.connectedNumber);
+
+        if (data.status === "connected") {
+          setShowQrModal(false);
+        }
+
         if (data.groups && data.groups.length > 0) {
           setGroups(data.groups);
           if (!selectedGroupId) {
@@ -91,15 +96,28 @@ export function WhatsAppDirectSignalGenerator() {
     }
   }, [selectedGroupId]);
 
-  const handleConnectWhatsApp = async () => {
+  const handleConnectWhatsApp = async (forceNew = false) => {
     try {
       setShowQrModal(true);
       setWaStatus("connecting");
-      const res = await fetch("/api/admin/whatsapp/connect", { method: "POST" });
+      if (forceNew) {
+        setQrCodeImg(null);
+      }
+      const res = await fetch("/api/admin/whatsapp/connect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ forceNew }),
+      });
       const data = await res.json();
       if (data.success) {
         setWaStatus(data.status);
-        setQrCodeImg(data.qrCode);
+        if (data.qrCode) {
+          setQrCodeImg(data.qrCode);
+        }
+        if (data.status === "connected") {
+          setShowQrModal(false);
+          showFeedback("WhatsApp Bot linked successfully!", "success");
+        }
       }
     } catch (err) {
       console.error("Failed to connect WhatsApp:", err);
@@ -133,6 +151,7 @@ export function WhatsAppDirectSignalGenerator() {
       console.error("Failed to refresh groups:", err);
     }
   };
+
   const handleSelectGroup = (groupId: string) => {
     setSelectedGroupId(groupId);
     if (typeof window !== "undefined") {
@@ -313,7 +332,7 @@ export function WhatsAppDirectSignalGenerator() {
             <Button
               size="sm"
               variant="outline"
-              onClick={handleConnectWhatsApp}
+              onClick={() => handleConnectWhatsApp(false)}
               className="h-7 text-xs bg-amber-500/10 text-amber-600 border-amber-500/30 hover:bg-amber-500/20 font-semibold"
             >
               <QrCode className="w-3.5 h-3.5 mr-1" />
@@ -626,7 +645,7 @@ export function WhatsAppDirectSignalGenerator() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={handleConnectWhatsApp}
+                  onClick={() => handleConnectWhatsApp(true)}
                   className="flex-1 text-xs"
                 >
                   <RefreshCw className="w-3 h-3 mr-1" /> Refresh QR
