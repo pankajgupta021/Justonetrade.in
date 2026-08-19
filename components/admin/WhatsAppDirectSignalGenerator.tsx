@@ -47,6 +47,9 @@ export function WhatsAppDirectSignalGenerator() {
   } | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const feedbackTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // Tracks whether we have a live QR being displayed so transient "disconnected"
+  // responses from cold Vercel instances don't blank it out.
+  const hasActiveQrRef = useRef<boolean>(false);
 
   const roundToNearestStep = (value: number, stepValue: number) => {
     return Math.round(value / stepValue) * stepValue;
@@ -71,11 +74,21 @@ export function WhatsAppDirectSignalGenerator() {
       const res = await fetch("/api/admin/whatsapp/status", { cache: "no-store" });
       const data = await res.json();
       if (data.success) {
+        // If a cold Vercel instance returns "disconnected" but we are currently
+        // showing a QR, trust our local state — don't blank the QR.
+        if (data.status === "disconnected" && hasActiveQrRef.current) {
+          return;
+        }
+
         setWaStatus(data.status);
-        setQrCodeImg(data.qrCode);
+        setQrCodeImg(data.qrCode ?? null);
         setConnectedNumber(data.connectedNumber);
 
+        // Update our ref to track whether a QR is currently visible
+        hasActiveQrRef.current = data.status === "qr_ready" && !!data.qrCode;
+
         if (data.status === "connected") {
+          hasActiveQrRef.current = false;
           setShowQrModal(false);
         }
 
@@ -101,7 +114,9 @@ export function WhatsAppDirectSignalGenerator() {
       setShowQrModal(true);
       setWaStatus("connecting");
       if (forceNew) {
+        // Only clear on explicit refresh so the old QR stays while we generate a new one
         setQrCodeImg(null);
+        hasActiveQrRef.current = false;
       }
       const res = await fetch("/api/admin/whatsapp/connect", {
         method: "POST",
@@ -113,8 +128,10 @@ export function WhatsAppDirectSignalGenerator() {
         setWaStatus(data.status);
         if (data.qrCode) {
           setQrCodeImg(data.qrCode);
+          hasActiveQrRef.current = true;
         }
         if (data.status === "connected") {
+          hasActiveQrRef.current = false;
           setShowQrModal(false);
           showFeedback("WhatsApp Bot linked successfully!", "success");
         }
@@ -130,6 +147,7 @@ export function WhatsAppDirectSignalGenerator() {
       await fetch("/api/admin/whatsapp/disconnect", { method: "POST" });
       setWaStatus("disconnected");
       setQrCodeImg(null);
+      hasActiveQrRef.current = false;
       setConnectedNumber(undefined);
       setGroups([]);
       setSelectedGroupId("");
@@ -191,8 +209,9 @@ export function WhatsAppDirectSignalGenerator() {
           if (statusRes.status === "fulfilled" && statusRes.value?.success) {
             const data = statusRes.value;
             setWaStatus(data.status);
-            setQrCodeImg(data.qrCode);
+            setQrCodeImg(data.qrCode ?? null);
             setConnectedNumber(data.connectedNumber);
+            hasActiveQrRef.current = data.status === "qr_ready" && !!data.qrCode;
             if (data.groups && data.groups.length > 0) {
               setGroups(data.groups);
               if (!selectedGroupId) {

@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
     }
 
     const initResult = await whatsAppService.initialize(forceNew);
-    const currentStatus = whatsAppService.getStatus();
+    const currentStatus = await whatsAppService.getStatus();
 
     return NextResponse.json({
       success: true,

@@ -9,6 +9,7 @@ import pino from "pino";
 import QRCode from "qrcode";
 import path from "path";
 import fs from "fs";
+import { prisma } from "@/lib/prisma";
 
 export type WhatsAppStatus = "disconnected" | "connecting" | "qr_ready" | "connected";
 
@@ -37,22 +38,102 @@ class WhatsAppService {
       : path.join(process.cwd(), "auth_info_baileys");
   }
 
-  public getStatus(): {
+  // ---------------------------------------------------------------------------
+  // DB state persistence — keeps QR/status visible across Vercel cold starts
+  // ---------------------------------------------------------------------------
+
+  private async persistState(): Promise<void> {
+    try {
+      await prisma.whatsAppState.upsert({
+        where: { key: "singleton" },
+        update: {
+          status: this.status,
+          qrCodeDataUrl: this.qrCodeDataUrl,
+          connectedNumber: this.sock?.user?.id
+            ? this.sock.user.id.split(":")[0].replace(/[^0-9]/g, "")
+            : null,
+          groupsJson: JSON.stringify(this.groupsCache),
+        },
+        create: {
+          key: "singleton",
+          status: this.status,
+          qrCodeDataUrl: this.qrCodeDataUrl,
+          connectedNumber: null,
+          groupsJson: "[]",
+        },
+      });
+    } catch (err) {
+      // Non-fatal — best-effort persistence
+      console.error("WhatsApp: failed to persist state to DB:", err);
+    }
+  }
+
+  private async loadStateFromDb(): Promise<{
+    status: WhatsAppStatus;
+    qrCode: string | null;
+    connectedNumber?: string;
+    groups: WhatsAppGroupInfo[];
+  } | null> {
+    try {
+      const row = await prisma.whatsAppState.findUnique({ where: { key: "singleton" } });
+      if (!row) return null;
+      const groups: WhatsAppGroupInfo[] = row.groupsJson ? JSON.parse(row.groupsJson) : [];
+      return {
+        status: row.status as WhatsAppStatus,
+        qrCode: row.qrCodeDataUrl ?? null,
+        connectedNumber: row.connectedNumber ?? undefined,
+        groups,
+      };
+    } catch (err) {
+      console.error("WhatsApp: failed to load state from DB:", err);
+      return null;
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Public API
+  // ---------------------------------------------------------------------------
+
+  public async getStatus(): Promise<{
     status: WhatsAppStatus;
     qrCode: string | null;
     rawQr: string | null;
     groups: WhatsAppGroupInfo[];
     connectedNumber?: string;
-  } {
-    const userJid = this.sock?.user?.id;
-    const connectedNumber = userJid ? userJid.split(":")[0].replace(/[^0-9]/g, "") : undefined;
+  }> {
+    // If this in-memory instance knows it's connected / has a QR, trust it.
+    if (this.status === "connected" || this.status === "qr_ready") {
+      const userJid = this.sock?.user?.id;
+      const connectedNumber = userJid ? userJid.split(":")[0].replace(/[^0-9]/g, "") : undefined;
+      return {
+        status: this.status,
+        qrCode: this.qrCodeDataUrl,
+        rawQr: this.rawQr,
+        groups: this.groupsCache,
+        connectedNumber,
+      };
+    }
 
+    // This instance is disconnected (e.g. a cold serverless start).
+    // Fall back to the DB state so the UI doesn't flicker.
+    const dbState = await this.loadStateFromDb();
+    if (dbState && (dbState.status === "qr_ready" || dbState.status === "connected")) {
+      return {
+        status: dbState.status,
+        qrCode: dbState.qrCode,
+        rawQr: null,
+        groups: dbState.groups,
+        connectedNumber: dbState.connectedNumber,
+      };
+    }
+
+    // Truly disconnected
     return {
       status: this.status,
       qrCode: this.qrCodeDataUrl,
       rawQr: this.rawQr,
       groups: this.groupsCache,
-      connectedNumber,
+      connectedNumber: undefined,
     };
   }
 
@@ -76,6 +157,9 @@ class WhatsAppService {
     this.status = "connecting";
     this.qrCodeDataUrl = null;
     this.rawQr = null;
+
+    // Persist "connecting" state so UI shows spinner immediately
+    await this.persistState();
 
     try {
       if (!fs.existsSync(this.authDir)) {
@@ -108,6 +192,8 @@ class WhatsAppService {
             console.error("Failed to generate QR code data URL:", qrErr);
           }
           this.status = "qr_ready";
+          // Persist QR to DB so other cold instances can serve it
+          await this.persistState();
         }
 
         if (connection === "open") {
@@ -116,6 +202,8 @@ class WhatsAppService {
           this.rawQr = null;
           console.log("WhatsApp Baileys connected successfully!");
           await this.refreshGroups();
+          // Persist connected state (clears the QR from DB)
+          await this.persistState();
         } else if (connection === "close") {
           const boomError = lastDisconnect?.error as { output?: { statusCode?: number } } | undefined;
           const statusCode = boomError?.output?.statusCode;
@@ -141,6 +229,8 @@ class WhatsAppService {
             } catch (err) {
               console.error("Error clearing auth directory:", err);
             }
+            // Clear DB state too so UI shows "disconnected" correctly
+            await this.persistState();
           }
         }
       });
@@ -152,6 +242,7 @@ class WhatsAppService {
       this.status = "disconnected";
       this.sock = null;
       this.isInitializing = false;
+      await this.persistState();
       return { status: "disconnected", qrCode: null };
     }
   }
@@ -225,6 +316,8 @@ class WhatsAppService {
       this.rawQr = null;
       this.groupsCache = [];
       this.isInitializing = false;
+      // Clear persisted state so all instances see "disconnected"
+      await this.persistState();
       try {
         if (fs.existsSync(this.authDir)) {
           fs.rmSync(this.authDir, { recursive: true, force: true });

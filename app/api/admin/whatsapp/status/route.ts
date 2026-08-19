@@ -7,7 +7,7 @@ export async function GET() {
   if (!auth.isAuthorized) return auth.response!;
 
   try {
-    const status = whatsAppService.getStatus();
+    const status = await whatsAppService.getStatus();
     return NextResponse.json({ success: true, ...status });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Failed to get status";
