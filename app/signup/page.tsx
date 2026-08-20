@@ -149,7 +149,7 @@ export default function SignupPage() {
                   id="phone"
                   name="phone"
                   type="tel"
-                  placeholder="+1 (555) 123-4567"
+                  placeholder="+CountryCode PhoneNumber (e.g. +44 7911 123456)"
                   maxLength={20}
                   required
                   disabled={isLoading}
