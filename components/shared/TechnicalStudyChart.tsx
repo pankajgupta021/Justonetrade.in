@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState, memo } from "react";
+import { useEffect, useMemo, useState, memo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Activity, Clock } from "lucide-react";
+import { Activity, Clock, Loader2, RefreshCw } from "lucide-react";
 
 export type ChartTimeframe = "5" | "15" | "30" | "60" | "120" | "180" | "240" | "D";
 
@@ -25,6 +25,37 @@ const timeframes: { label: string; value: ChartTimeframe; tooltip: string }[] = 
   { label: "1D", value: "D", tooltip: "1 Day" },
 ];
 
+type ChartPoint = {
+  time: number;
+  close: number;
+};
+
+type ChartResponse = {
+  symbol: string;
+  source: string;
+  price: number;
+  change: number | null;
+  changePercent: number | null;
+  updatedAt: number;
+  points: ChartPoint[];
+};
+
+function formatPrice(value: number) {
+  return value.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+function formatTime(value: number, timeframe: ChartTimeframe) {
+  return new Intl.DateTimeFormat("en-US", {
+    month: timeframe === "D" ? "short" : undefined,
+    day: timeframe === "D" ? "numeric" : undefined,
+    hour: timeframe === "D" ? undefined : "numeric",
+    minute: timeframe === "D" ? undefined : "2-digit",
+  }).format(new Date(value));
+}
+
 function TechnicalStudyChartComponent({
   defaultTimeframe = "5",
   height = 560,
@@ -32,54 +63,110 @@ function TechnicalStudyChartComponent({
   showTimeframeBar = true,
 }: TechnicalStudyChartProps) {
   const [timeframe, setTimeframe] = useState<ChartTimeframe>(defaultTimeframe);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [chartData, setChartData] = useState<ChartResponse | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
+    const controller = new AbortController();
 
-    container.innerHTML = "";
+    const fetchChartData = async () => {
+      try {
+        setError(null);
+        const res = await fetch(`/api/market/spcfd-chart?timeframe=${timeframe}`, {
+          cache: "no-store",
+          signal: controller.signal,
+        });
 
-    const widgetContainer = document.createElement("div");
-    widgetContainer.className = "tradingview-widget-container";
-    widgetContainer.style.height = "100%";
-    widgetContainer.style.width = "100%";
+        if (!res.ok) {
+          throw new Error("Chart data unavailable");
+        }
 
-    const widgetSlot = document.createElement("div");
-    widgetSlot.className = "tradingview-widget-container__widget";
-    widgetSlot.style.height = "100%";
-    widgetSlot.style.width = "100%";
-    widgetContainer.appendChild(widgetSlot);
+        const data = (await res.json()) as ChartResponse;
+        setChartData(data);
+      } catch (err) {
+        if (!controller.signal.aborted) {
+          console.error("Failed to load SPCFD chart:", err);
+          setError("Live chart data is unavailable right now.");
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setIsLoading(false);
+        }
+      }
+    };
 
-    const script = document.createElement("script");
-    script.type = "text/javascript";
-    script.src = "https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js";
-    script.async = true;
-    script.innerHTML = JSON.stringify({
-      autosize: true,
-      symbol: "FOREXCOM:SPXUSD",
-      interval: timeframe,
-      timezone: "Asia/Kolkata",
-      theme: "dark",
-      style: "1",
-      locale: "en",
-      enable_publishing: false,
-      allow_symbol_change: false,
-      hide_side_toolbar: false,
-      hide_top_toolbar: false,
-      save_image: false,
-      calendar: false,
-      studies: [],
-      support_host: "https://www.tradingview.com",
-    });
-
-    widgetContainer.appendChild(script);
-    container.appendChild(widgetContainer);
+    fetchChartData();
+    const intervalId = window.setInterval(fetchChartData, 30000);
 
     return () => {
-      container.innerHTML = "";
+      controller.abort();
+      window.clearInterval(intervalId);
     };
   }, [timeframe]);
+
+  const chart = useMemo(() => {
+    const points = chartData?.points ?? [];
+    const width = 900;
+    const height = 420;
+    const padding = { top: 30, right: 24, bottom: 36, left: 56 };
+    const innerWidth = width - padding.left - padding.right;
+    const innerHeight = height - padding.top - padding.bottom;
+
+    if (points.length < 2) {
+      return { width, height, path: "", areaPath: "", grid: [], labels: [], lastPoint: null };
+    }
+
+    const values = points.map((point) => point.close);
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const range = max - min || 1;
+    const paddedMin = min - range * 0.08;
+    const paddedMax = max + range * 0.08;
+    const paddedRange = paddedMax - paddedMin || 1;
+
+    const getX = (index: number) => padding.left + (index / (points.length - 1)) * innerWidth;
+    const getY = (close: number) => padding.top + ((paddedMax - close) / paddedRange) * innerHeight;
+
+    const path = points
+      .map((point, index) => `${index === 0 ? "M" : "L"} ${getX(index).toFixed(2)} ${getY(point.close).toFixed(2)}`)
+      .join(" ");
+
+    const lastX = getX(points.length - 1);
+    const firstX = getX(0);
+    const baseY = padding.top + innerHeight;
+    const areaPath = `${path} L ${lastX.toFixed(2)} ${baseY} L ${firstX.toFixed(2)} ${baseY} Z`;
+
+    const grid = Array.from({ length: 5 }, (_, index) => {
+      const ratio = index / 4;
+      const value = paddedMax - ratio * paddedRange;
+      const y = padding.top + ratio * innerHeight;
+      return { y, value };
+    });
+
+    const labelIndexes = Array.from(new Set([
+      0,
+      Math.floor((points.length - 1) / 2),
+      points.length - 1,
+    ]));
+
+    const labels = labelIndexes.map((index) => ({
+      x: getX(index),
+      label: formatTime(points[index].time, timeframe),
+    }));
+
+    return {
+      width,
+      height,
+      path,
+      areaPath,
+      grid,
+      labels,
+      lastPoint: { x: lastX, y: getY(points[points.length - 1].close) },
+    };
+  }, [chartData, timeframe]);
+
+  const isPositive = (chartData?.change ?? 0) >= 0;
 
   return (
     <div className={`flex flex-col w-full rounded-xl overflow-hidden border border-border bg-card shadow-lg ${className}`}>
@@ -88,7 +175,7 @@ function TechnicalStudyChartComponent({
           <div className="flex items-center gap-2.5">
             <div className="flex items-center gap-1.5 font-bold text-sm text-foreground tracking-tight">
               <Activity className="h-4 w-4 text-emerald-500" />
-              <span>SPX FD</span>
+              <span>SPCFD</span>
             </div>
             <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 py-0.5">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -109,7 +196,10 @@ function TechnicalStudyChartComponent({
                     key={tf.value}
                     size="sm"
                     variant={isActive ? "default" : "ghost"}
-                    onClick={() => setTimeframe(tf.value)}
+                    onClick={() => {
+                      setIsLoading(true);
+                      setTimeframe(tf.value);
+                    }}
                     className={`h-7 px-2.5 text-xs font-bold transition-all ${isActive
                       ? "bg-primary text-primary-foreground shadow-sm"
                       : "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -125,12 +215,107 @@ function TechnicalStudyChartComponent({
         </div>
       )}
 
-      {/* Embedded Chart Canvas */}
       <div
-        ref={containerRef}
         style={{ height: typeof height === "number" ? `${height}px` : height }}
-        className="w-full relative min-h-[420px] bg-slate-950"
-      />
+        className="w-full relative min-h-[420px] bg-slate-950 text-slate-100"
+      >
+        <div className="absolute inset-x-0 top-0 z-10 flex flex-col gap-2 p-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              <div className="text-2xl font-bold tabular-nums">
+                {chartData ? formatPrice(chartData.price) : "--"}
+              </div>
+              {typeof chartData?.change === "number" && typeof chartData.changePercent === "number" && (
+                <Badge className={`${isPositive ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30" : "bg-red-500/15 text-red-300 border-red-500/30"} border font-bold tabular-nums`}>
+                  {isPositive ? "+" : ""}
+                  {chartData.change.toFixed(2)} ({isPositive ? "+" : ""}
+                  {chartData.changePercent.toFixed(2)}%)
+                </Badge>
+              )}
+            </div>
+            <div className="mt-1 text-xs text-slate-400">
+              {chartData ? `${chartData.source} data · Updated ${new Date(chartData.updatedAt).toLocaleTimeString()}` : "Loading Yahoo Finance data"}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 text-xs text-slate-400">
+            {isLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin text-emerald-400" />
+            ) : (
+              <RefreshCw className="h-4 w-4 text-emerald-400" />
+            )}
+            <span>Refreshes every 30s</span>
+          </div>
+        </div>
+
+        <svg
+          viewBox={`0 0 ${chart.width} ${chart.height}`}
+          className="h-full w-full"
+          preserveAspectRatio="none"
+          role="img"
+          aria-label="SPCFD realtime chart"
+        >
+          <defs>
+            <linearGradient id="spcfdLine" x1="0" x2="1" y1="0" y2="0">
+              <stop offset="0%" stopColor="#22c55e" />
+              <stop offset="100%" stopColor="#38bdf8" />
+            </linearGradient>
+            <linearGradient id="spcfdArea" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stopColor="#22c55e" stopOpacity="0.28" />
+              <stop offset="100%" stopColor="#38bdf8" stopOpacity="0.02" />
+            </linearGradient>
+          </defs>
+
+          <rect width={chart.width} height={chart.height} fill="#020617" />
+          {chart.grid.map((line) => (
+            <g key={line.y}>
+              <line x1="56" x2="876" y1={line.y} y2={line.y} stroke="#1e293b" strokeWidth="1" />
+              <text x="16" y={line.y + 4} fill="#64748b" fontSize="11" fontFamily="monospace">
+                {formatPrice(line.value)}
+              </text>
+            </g>
+          ))}
+
+          {chart.areaPath && <path d={chart.areaPath} fill="url(#spcfdArea)" />}
+          {chart.path && (
+            <path
+              d={chart.path}
+              fill="none"
+              stroke="url(#spcfdLine)"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              vectorEffect="non-scaling-stroke"
+            />
+          )}
+          {chart.lastPoint && (
+            <circle
+              cx={chart.lastPoint.x}
+              cy={chart.lastPoint.y}
+              r="5"
+              fill="#22c55e"
+              stroke="#dcfce7"
+              strokeWidth="2"
+              vectorEffect="non-scaling-stroke"
+            />
+          )}
+
+          {chart.labels.map((item) => (
+            <text key={`${item.x}-${item.label}`} x={item.x} y="402" textAnchor="middle" fill="#64748b" fontSize="11">
+              {item.label}
+            </text>
+          ))}
+        </svg>
+
+        {(isLoading || error || !chartData?.points.length) && (
+          <div className="absolute inset-0 flex items-center justify-center bg-slate-950/70 px-6 text-center">
+            <div className="flex flex-col items-center gap-2 text-sm text-slate-300">
+              {isLoading && <Loader2 className="h-5 w-5 animate-spin text-emerald-400" />}
+              <span>{error ?? "Loading SPCFD chart..."}</span>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

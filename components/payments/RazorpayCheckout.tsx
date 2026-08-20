@@ -226,7 +226,7 @@ export function RazorpayCheckout({ hasUsedTrial = false, onSuccess }: RazorpayCh
             </div>
 
             <div className="mt-3">
-              <div className="text-2xl font-bold">₹1,000 <span className="text-xs font-normal text-muted-foreground">/ month</span></div>
+              <div className="text-2xl font-bold">₹10,000 <span className="text-xs font-normal text-muted-foreground">/ month</span></div>
               <p className="text-xs text-muted-foreground mt-0.5">30-Day Uninterrupted Access</p>
             </div>
 
@@ -256,7 +256,7 @@ export function RazorpayCheckout({ hasUsedTrial = false, onSuccess }: RazorpayCh
               {isLoading === "monthly" ? (
                 <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Processing...</>
               ) : (
-                "Get Monthly Pass (₹1,000)"
+                "Get Monthly Pass (₹10,000)"
               )}
             </Button>
           </div>

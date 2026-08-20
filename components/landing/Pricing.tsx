@@ -101,7 +101,7 @@ export function Pricing() {
                 <CardTitle className="text-xl">Monthly Access</CardTitle>
                 <CardDescription>Full 30-day SPX Options training</CardDescription>
                 <div className="mt-4 flex items-baseline justify-center gap-x-1">
-                  <span className="text-4xl font-bold tracking-tight text-foreground">₹1,000</span>
+                  <span className="text-4xl font-bold tracking-tight text-foreground">₹10,000</span>
                   <span className="text-xs font-semibold text-muted-foreground">/ month</span>
                 </div>
               </CardHeader>
