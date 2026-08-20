@@ -62,6 +62,7 @@ export function DashboardContent({
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   const handleSignOut = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -131,6 +132,29 @@ export function DashboardContent({
     } catch (_err) {
       setDeleteError("An unexpected error occurred while deleting your account.");
       setIsDeleting(false);
+    }
+  };
+
+  const handleCancelSubscription = async () => {
+    if (!confirm("Are you sure you want to cancel your auto-renewal? You will keep access until the end of your current billing period.")) {
+      return;
+    }
+
+    setIsCancelling(true);
+    try {
+      const res = await fetch("/api/payments/cancel-subscription", { method: "POST" });
+      const data = await res.json();
+      
+      if (data.success) {
+        alert("Auto-renewal has been cancelled. You will not be charged again.");
+        router.refresh();
+      } else {
+        alert(data.error || "Failed to cancel subscription.");
+      }
+    } catch (err) {
+      alert("An unexpected error occurred.");
+    } finally {
+      setIsCancelling(false);
     }
   };
 
@@ -304,6 +328,20 @@ export function DashboardContent({
                       ⏳ Pending admin group addition (Timer starts once added)
                     </p>
                   )}
+                  {subscription.isRecurring && (
+                    <div className="mt-3 pt-3 border-t">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="w-full text-xs text-destructive hover:text-destructive border-destructive/20 hover:border-destructive/40 hover:bg-destructive/10"
+                        onClick={handleCancelSubscription}
+                        disabled={isCancelling}
+                      >
+                        {isCancelling ? <Loader2 className="h-3 w-3 mr-1.5 animate-spin" /> : null}
+                        Cancel Auto-Renewal
+                      </Button>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <p className="text-xs text-muted-foreground mt-2">
@@ -352,7 +390,7 @@ export function DashboardContent({
         </div>
 
         {/* Pricing / Plan Selection Section */}
-        {(!hasActiveSubscription || showUpgradeSection) && (
+        {(!hasActiveSubscription || showUpgradeSection) && user.role !== "ADMIN_PROVIDER" && (
           <div className="mb-8 p-6 rounded-2xl border bg-card/60 backdrop-blur shadow-sm">
             <div className="text-center max-w-xl mx-auto mb-6">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold mb-2">

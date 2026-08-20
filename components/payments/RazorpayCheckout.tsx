@@ -246,17 +246,29 @@ export function RazorpayCheckout({ hasUsedTrial = false, onSuccess }: RazorpayCh
             </ul>
           </div>
 
-          <div className="mt-5 pt-3 border-t">
+          <div className="mt-5 pt-3 border-t flex flex-col gap-2">
             <Button
-              onClick={() => handlePayment("monthly")}
+              onClick={() => handlePayment("recurring")}
               disabled={isLoading !== null}
               variant="default"
               className="w-full text-xs font-bold"
             >
+              {isLoading === "recurring" ? (
+                <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Processing...</>
+              ) : (
+                "Monthly Auto-Renew (₹10,000)"
+              )}
+            </Button>
+            <Button
+              onClick={() => handlePayment("monthly")}
+              disabled={isLoading !== null}
+              variant="outline"
+              className="w-full text-xs font-bold border-primary/20 hover:bg-primary/5 text-primary"
+            >
               {isLoading === "monthly" ? (
                 <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Processing...</>
               ) : (
-                "Get Monthly Pass (₹10,000)"
+                "1 Month Only (₹10,000)"
               )}
             </Button>
           </div>
