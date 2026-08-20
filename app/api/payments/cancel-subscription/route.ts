@@ -17,9 +17,8 @@ export async function POST() {
       );
     }
 
-    // Find user's active recurring subscription
     const subscription = await prisma.subscription.findFirst({
-      where: { 
+      where: {
         userId: session.user.id,
         isRecurring: true,
         status: "ACTIVE",
@@ -39,16 +38,12 @@ export async function POST() {
       key_secret: process.env.RAZORPAY_KEY_SECRET,
     });
 
-    // Cancel the subscription at Razorpay at the end of the billing cycle
     await razorpay.subscriptions.cancel(subscription.razorpaySubscriptionId, true);
 
-    // Update the database to reflect it's no longer recurring, but keep the current access until it expires
     await prisma.subscription.update({
       where: { id: subscription.id },
-      data: { 
-        isRecurring: false,
-        // Optional: you can set status to "CANCELLED" if you want to revoke access immediately, 
-        // but typically you let them keep access until currentPeriodEnd.
+      data: {
+        isRecurring: false
       },
     });
 
