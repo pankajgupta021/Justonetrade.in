@@ -35,7 +35,7 @@ export async function POST() {
       data: {
         userId: session.user.id,
         razorpayOrderId: subscription.id,
-        amount: 1000000,
+        amount: 100000,
         currency: "INR",
         isRecurring: true,
         status: "PENDING",
