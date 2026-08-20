@@ -21,8 +21,8 @@ export async function POST(req: Request) {
     const body = await req.json().catch(() => ({}));
     const plan = body?.plan === "yearly" ? "yearly" : "monthly";
 
-    const amount = plan === "yearly" ? 10000000 : 1000000;
-    const currency = "INR";
+    const currency = "USD";
+    const amount = plan === "yearly" ? 100000 : 10000;   // $1000 or $100 in cents
 
     const razorpay = new Razorpay({
       key_id: process.env.RAZORPAY_KEY_ID,

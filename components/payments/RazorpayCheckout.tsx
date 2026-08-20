@@ -176,7 +176,7 @@ export function RazorpayCheckout({ hasUsedTrial = false, onSuccess }: RazorpayCh
             </div>
 
             <div className="mt-3">
-              <div className="text-2xl font-bold">₹0</div>
+              <div className="text-2xl font-bold">$0</div>
               <p className="text-xs text-muted-foreground mt-0.5">48 Hours Full Access</p>
             </div>
 
@@ -226,7 +226,9 @@ export function RazorpayCheckout({ hasUsedTrial = false, onSuccess }: RazorpayCh
             </div>
 
             <div className="mt-3">
-              <div className="text-2xl font-bold">₹10,000 <span className="text-xs font-normal text-muted-foreground">/ month</span></div>
+              <div className="text-2xl font-bold">
+                $100 <span className="text-xs font-normal text-muted-foreground">/ month</span>
+              </div>
               <p className="text-xs text-muted-foreground mt-0.5">30-Day Uninterrupted Access</p>
             </div>
 
@@ -256,7 +258,7 @@ export function RazorpayCheckout({ hasUsedTrial = false, onSuccess }: RazorpayCh
               {isLoading === "recurring" ? (
                 <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Processing...</>
               ) : (
-                "Monthly Auto-Renew (₹10,000)"
+                "Monthly Auto-Renew ($100)"
               )}
             </Button>
             <Button
@@ -268,7 +270,7 @@ export function RazorpayCheckout({ hasUsedTrial = false, onSuccess }: RazorpayCh
               {isLoading === "monthly" ? (
                 <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Processing...</>
               ) : (
-                "1 Month Only (₹10,000)"
+                "1 Month Only ($100)"
               )}
             </Button>
           </div>
@@ -277,7 +279,7 @@ export function RazorpayCheckout({ hasUsedTrial = false, onSuccess }: RazorpayCh
         {/* Tier 3: Yearly Pass (Best Value) */}
         <div className="flex flex-col justify-between p-4 rounded-xl border-2 border-primary/60 bg-primary/5 hover:border-primary transition-all shadow-md relative overflow-hidden">
           <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-[9px] font-bold px-2 py-0.5 rounded-bl-md uppercase">
-            Save ₹20,000
+            Save $200
           </div>
 
           <div>
@@ -288,8 +290,12 @@ export function RazorpayCheckout({ hasUsedTrial = false, onSuccess }: RazorpayCh
             </div>
 
             <div className="mt-3">
-              <div className="text-2xl font-bold">₹1,00,000 <span className="text-xs font-normal text-muted-foreground">/ year</span></div>
-              <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mt-0.5">Includes 2 Months Free (Save ₹20,000)</p>
+              <div className="text-2xl font-bold">
+                $1,000 <span className="text-xs font-normal text-muted-foreground">/ year</span>
+              </div>
+              <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mt-0.5">
+                Includes 2 Months Free (Save $200)
+              </p>
             </div>
 
             <ul className="mt-4 space-y-2 text-xs text-muted-foreground">
@@ -317,7 +323,7 @@ export function RazorpayCheckout({ hasUsedTrial = false, onSuccess }: RazorpayCh
               {isLoading === "yearly" ? (
                 <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Processing...</>
               ) : (
-                "Get Yearly Pass (₹1,00,000)"
+                "Get Yearly Pass ($1,000)"
               )}
             </Button>
           </div>
