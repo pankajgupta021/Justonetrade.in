@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, memo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Activity, Clock, Loader2, RefreshCw } from "lucide-react";
+import { useMarketData } from "@/hooks/useMarketData";
 
 export type ChartTimeframe = "5" | "15" | "30" | "60" | "120" | "180" | "240" | "D";
 
@@ -24,21 +25,6 @@ const timeframes: { label: string; value: ChartTimeframe; tooltip: string }[] = 
   { label: "4h", value: "240", tooltip: "4 Hours" },
   { label: "1D", value: "D", tooltip: "1 Day" },
 ];
-
-type ChartPoint = {
-  time: number;
-  close: number;
-};
-
-type ChartResponse = {
-  symbol: string;
-  source: string;
-  price: number;
-  change: number | null;
-  changePercent: number | null;
-  updatedAt: number;
-  points: ChartPoint[];
-};
 
 function formatPrice(value: number) {
   return value.toLocaleString("en-US", {
@@ -63,47 +49,7 @@ function TechnicalStudyChartComponent({
   showTimeframeBar = true,
 }: TechnicalStudyChartProps) {
   const [timeframe, setTimeframe] = useState<ChartTimeframe>(defaultTimeframe);
-  const [chartData, setChartData] = useState<ChartResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const controller = new AbortController();
-
-    const fetchChartData = async () => {
-      try {
-        setError(null);
-        const res = await fetch(`/api/market/spcfd-chart?timeframe=${timeframe}`, {
-          cache: "no-store",
-          signal: controller.signal,
-        });
-
-        if (!res.ok) {
-          throw new Error("Chart data unavailable");
-        }
-
-        const data = (await res.json()) as ChartResponse;
-        setChartData(data);
-      } catch (err) {
-        if (!controller.signal.aborted) {
-          console.error("Failed to load SPCFD chart:", err);
-          setError("Live chart data is unavailable right now.");
-        }
-      } finally {
-        if (!controller.signal.aborted) {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    fetchChartData();
-    const intervalId = window.setInterval(fetchChartData, 30000);
-
-    return () => {
-      controller.abort();
-      window.clearInterval(intervalId);
-    };
-  }, [timeframe]);
+  const { data: chartData, isLoading, error, marketOpen } = useMarketData(timeframe);
 
   const chart = useMemo(() => {
     const points = chartData?.points ?? [];
@@ -177,10 +123,16 @@ function TechnicalStudyChartComponent({
               <Activity className="h-4 w-4 text-emerald-500" />
               <span>SPCFD</span>
             </div>
-            <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 py-0.5">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Live Study
-            </Badge>
+            {marketOpen ? (
+              <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 py-0.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Live Study
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/30 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 py-0.5">
+                Market Closed
+              </Badge>
+            )}
           </div>
 
           <div className="flex items-center gap-1.5">
@@ -197,7 +149,6 @@ function TechnicalStudyChartComponent({
                     size="sm"
                     variant={isActive ? "default" : "ghost"}
                     onClick={() => {
-                      setIsLoading(true);
                       setTimeframe(tf.value);
                     }}
                     className={`h-7 px-2.5 text-xs font-bold transition-all ${isActive
@@ -234,17 +185,19 @@ function TechnicalStudyChartComponent({
               )}
             </div>
             <div className="mt-1 text-xs text-slate-400">
-              {chartData ? `${chartData.source} data · Updated ${new Date(chartData.updatedAt).toLocaleTimeString()}` : "Loading Yahoo Finance data"}
+              {chartData ? `${chartData.source} data · Updated ${new Date(chartData.updatedAt).toLocaleTimeString()}` : "Loading Twelve Data"}
             </div>
           </div>
 
           <div className="flex items-center gap-2 text-xs text-slate-400">
             {isLoading ? (
               <Loader2 className="h-4 w-4 animate-spin text-emerald-400" />
+            ) : marketOpen ? (
+              <RefreshCw className="h-4 w-4 text-emerald-400 animate-spin-slow" />
             ) : (
-              <RefreshCw className="h-4 w-4 text-emerald-400" />
+              <Clock className="h-4 w-4 text-slate-400" />
             )}
-            <span>Refreshes every 30s</span>
+            <span>{marketOpen ? "Live Streaming" : "Market Closed"}</span>
           </div>
         </div>
 
