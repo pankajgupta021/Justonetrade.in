@@ -20,13 +20,15 @@ export default function ContactPage() {
 
     const formData = new FormData(e.currentTarget);
 
+    const data = Object.fromEntries(formData.entries());
+
     try {
-      const response = await fetch("https://formspree.io/f/mzepqvya", {
+      const response = await fetch("/api/contact", {
         method: "POST",
-        body: formData,
         headers: {
-          Accept: "application/json",
+          "Content-Type": "application/json",
         },
+        body: JSON.stringify(data),
       });
 
       if (response.ok) {
