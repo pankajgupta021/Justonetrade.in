@@ -227,7 +227,7 @@ export function RazorpayCheckout({ hasUsedTrial = false, onSuccess }: RazorpayCh
 
             <div className="mt-3">
               <div className="text-2xl font-bold">
-                $100 <span className="text-xs font-normal text-muted-foreground">/ month</span>
+                $2 <span className="text-xs font-normal text-muted-foreground">/ month</span>
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">30-Day Uninterrupted Access</p>
             </div>
@@ -258,7 +258,7 @@ export function RazorpayCheckout({ hasUsedTrial = false, onSuccess }: RazorpayCh
               {isLoading === "recurring" ? (
                 <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Processing...</>
               ) : (
-                "Monthly Auto-Renew ($100)"
+                "Monthly Auto-Renew ($2)"
               )}
             </Button>
             <Button
@@ -270,7 +270,7 @@ export function RazorpayCheckout({ hasUsedTrial = false, onSuccess }: RazorpayCh
               {isLoading === "monthly" ? (
                 <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Processing...</>
               ) : (
-                "1 Month Only ($100)"
+                "1 Month Only ($2)"
               )}
             </Button>
           </div>

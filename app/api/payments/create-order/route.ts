@@ -22,7 +22,7 @@ export async function POST(req: Request) {
     const plan = body?.plan === "yearly" ? "yearly" : "monthly";
 
     const currency = "USD";
-    const amount = plan === "yearly" ? 100000 : 10000;   // $1000 or $100 in cents
+    const amount = plan === "yearly" ? 100000 : 200;   // $1000 or $2 in cents
 
     const razorpay = new Razorpay({
       key_id: process.env.RAZORPAY_KEY_ID,
