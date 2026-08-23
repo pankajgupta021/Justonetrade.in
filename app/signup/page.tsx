@@ -242,11 +242,11 @@ export default function SignupPage() {
                   className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 mt-1"
                 >
                   I agree to the{" "}
-                  <Link href="#" className="text-primary hover:underline">
+                  <Link href="/terms" className="text-primary hover:underline">
                     Terms & Conditions
                   </Link>{" "}
                   and{" "}
-                  <Link href="#" className="text-primary hover:underline">
+                  <Link href="/terms" className="text-primary hover:underline">
                     Privacy Policy
                   </Link>
                   .
