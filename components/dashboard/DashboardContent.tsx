@@ -28,7 +28,8 @@ interface DashboardUser {
   id: string;
   fullName: string;
   email: string;
-  phone: string;
+  countryCode: string;
+  contactNumber: string;
   role: string;
   isActive: boolean;
   hasUsedTrial: boolean;
@@ -250,7 +251,7 @@ export function DashboardContent({
                 {isTrial ? "Trial Request Submitted – Being Added to Group" : "Payment Confirmed – Being Added to Group"}
               </h3>
               <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">
-                The admin is reviewing your account and will add your registered phone number (<strong>{user.phone}</strong>) to the private WhatsApp signal group within a few hours.
+                The admin is reviewing your account and will add your registered phone number (<strong>{user.countryCode} {user.contactNumber}</strong>) to the private WhatsApp signal group within a few hours.
                 {isTrial && " Your 48-hour trial timer will begin as soon as you are added."}
               </p>
             </div>
@@ -374,14 +375,14 @@ export function DashboardContent({
               {hasActiveSubscription && whatsappAccessGranted ? (
                 <div className="mt-2 text-xs text-muted-foreground">
                   <p className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> Signals active on {user.phone}
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Signals active on {user.countryCode} {user.contactNumber}
                   </p>
                   <p className="text-[11px] text-muted-foreground mt-1">Admin dispatches live calls directly to group.</p>
                 </div>
               ) : (
                 <p className="text-xs text-muted-foreground mt-2">
                   {hasActiveSubscription 
-                    ? `Admin will add your number (${user.phone}) to the private group shortly.`
+                    ? `Admin will add your number (${user.countryCode} ${user.contactNumber}) to the private group shortly.`
                     : "Activate trial or subscription to get added by admin."}
                 </p>
               )}
@@ -433,7 +434,7 @@ export function DashboardContent({
               </div>
               <div className="p-3 bg-muted/40 rounded-lg border">
                 <p className="text-muted-foreground font-medium">Phone (WhatsApp)</p>
-                <p className="font-bold text-sm mt-0.5">{user.phone}</p>
+                <p className="font-bold text-sm mt-0.5">{user.countryCode} {user.contactNumber}</p>
               </div>
               <div className="p-3 bg-muted/40 rounded-lg border">
                 <p className="text-muted-foreground font-medium">Trial Eligibility</p>

@@ -14,7 +14,8 @@ type UserWithSub = {
   id: string;
   fullName: string;
   email: string;
-  phone: string;
+  countryCode: string;
+  contactNumber: string;
   hasUsedTrial?: boolean;
   createdAt: string;
   subscriptions: {
@@ -55,7 +56,8 @@ export function SubscriberTable({ users }: { users: UserWithSub[] }) {
     const searchMatch =
       u.fullName.toLowerCase().includes(search.toLowerCase()) ||
       u.email.toLowerCase().includes(search.toLowerCase()) ||
-      u.phone.includes(search);
+      (u.countryCode + " " + u.contactNumber).includes(search) ||
+      u.contactNumber.includes(search);
 
     if (!searchMatch) return false;
 
@@ -162,7 +164,7 @@ export function SubscriberTable({ users }: { users: UserWithSub[] }) {
                     </TableCell>
                     <TableCell>
                       <div className="text-sm">{user.email}</div>
-                      <div className="text-sm">{user.phone}</div>
+                      <div className="text-sm">{user.countryCode} {user.contactNumber}</div>
                     </TableCell>
                     <TableCell>
                       {hasPaid ? (

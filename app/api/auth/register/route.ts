@@ -5,7 +5,6 @@ import { registerSchema } from '@/lib/validation/auth';
 import { checkRateLimit, getClientKey } from '@/lib/rate-limit';
 
 export async function POST(request: Request) {
-  // Rate limit: 5 registrations per hour per IP to block mass account creation
   const rl = checkRateLimit(getClientKey(request, 'register'), { limit: 5, windowSecs: 3600 });
   if (!rl.success) {
     const retryAfterSecs = Math.ceil((rl.resetAt - Date.now()) / 1000);
@@ -34,7 +33,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { fullName, email, phone, password } = validatedData.data;
+    const { fullName, email, countryCode, contactNumber, password } = validatedData.data;
 
     const existingUser = await prisma.user.findUnique({
       where: { email },
@@ -55,7 +54,7 @@ export async function POST(request: Request) {
 
 
     const existingPhone = await prisma.user.findFirst({
-      where: { phone },
+      where: { countryCode, contactNumber },
     });
 
     if (existingPhone) {
@@ -78,7 +77,8 @@ export async function POST(request: Request) {
       data: {
         fullName,
         email,
-        phone,
+        countryCode,
+        contactNumber,
         passwordHash,
         role: 'SUBSCRIBER',
         isActive: true,
@@ -89,7 +89,8 @@ export async function POST(request: Request) {
         id: true,
         fullName: true,
         email: true,
-        phone: true,
+        countryCode: true,
+        contactNumber: true,
         role: true,
         isActive: true,
         createdAt: true,

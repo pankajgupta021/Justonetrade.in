@@ -4,8 +4,6 @@ import { getSession } from "@/lib/auth/session";
 import { redirect } from "next/navigation";
 
 export default async function AdminSubscribersPage() {
-  // Defense-in-depth: verify admin role directly in this server component
-  // (AdminLayout already redirects, but this ensures the DB query never runs for non-admins)
   const session = await getSession();
   if (!session || session.user.role !== "ADMIN_PROVIDER") {
     redirect("/login");
@@ -36,7 +34,8 @@ export default async function AdminSubscribersPage() {
     id: u.id,
     fullName: u.fullName,
     email: u.email,
-    phone: u.phone,
+    countryCode: u.countryCode,
+    contactNumber: u.contactNumber,
     hasUsedTrial: u.hasUsedTrial,
     createdAt: u.createdAt.toISOString(),
     subscriptions: u.subscriptions.map((s) => ({

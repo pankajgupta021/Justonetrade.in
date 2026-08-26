@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Activity, Loader2 } from "lucide-react";
+import { countryCodes } from "@/lib/countryCodes";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -66,7 +67,8 @@ export default function SignupPage() {
         body: JSON.stringify({
           fullName: formData.get("fullName"),
           email: formData.get("email"),
-          phone: formData.get("phone"),
+          countryCode: formData.get("countryCode"),
+          contactNumber: formData.get("contactNumber"),
           password,
           confirmPassword,
           acceptTerms: agreeTerms,
@@ -144,16 +146,33 @@ export default function SignupPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number (WhatsApp)</Label>
-                <Input
-                  id="phone"
-                  name="phone"
-                  type="tel"
-                  placeholder="+CountryCode PhoneNumber (e.g. +44 7911 123456)"
-                  maxLength={20}
-                  required
-                  disabled={isLoading}
-                />
+                <Label htmlFor="contactNumber">Phone Number (WhatsApp)</Label>
+                <div className="flex space-x-2">
+                  <select
+                    id="countryCode"
+                    name="countryCode"
+                    className="flex h-9 w-[120px] rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                    required
+                    disabled={isLoading}
+                    defaultValue="+91"
+                  >
+                    {countryCodes.map((c) => (
+                      <option key={c.code} value={c.code}>
+                        {c.code} {c.country}
+                      </option>
+                    ))}
+                  </select>
+                  <Input
+                    id="contactNumber"
+                    name="contactNumber"
+                    type="tel"
+                    placeholder="Phone Number (e.g. 7911 123456)"
+                    maxLength={15}
+                    required
+                    disabled={isLoading}
+                    className="flex-1"
+                  />
+                </div>
                 <p className="text-xs text-muted-foreground">
                   Ensure this number has an active WhatsApp account.
                 </p>

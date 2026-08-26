@@ -3,10 +3,11 @@ import { z } from 'zod';
 export const registerSchema = z.object({
   fullName: z.string().min(2, 'Full name must be at least 2 characters'),
   email: z.string().email('Invalid email address').transform(val => val.toLowerCase().trim()),
-  phone: z.string()
-    .min(7, 'Phone number is too short')
-    .max(20, 'Phone number is too long')
-    .regex(/^\+[1-9]\d{1,14}([\s.-]?\d+)*$/, 'Must be a valid international phone number starting with +')
+  countryCode: z.string().min(1, 'Country code is required').regex(/^\+\d{1,4}$/, 'Must be a valid country code (e.g., +91)'),
+  contactNumber: z.string()
+    .min(5, 'Contact number is too short')
+    .max(15, 'Contact number is too long')
+    .regex(/^[\s.-]?\d+([\s.-]?\d+)*$/, 'Must be a valid number')
     .transform(val => val.trim()),
   password: z.string().min(8, 'Password must be at least 8 characters'),
   confirmPassword: z.string(),

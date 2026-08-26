@@ -21,7 +21,8 @@ model User {
   id               String    @id @default(cuid())
   fullName         String
   email            String    @unique
-  phone            String
+  countryCode      String    @default("+91")
+  contactNumber    String    @default("")
   passwordHash     String
   role             Role      @default(SUBSCRIBER)
   isActive         Boolean   @default(true)

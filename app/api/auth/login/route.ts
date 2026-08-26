@@ -6,7 +6,6 @@ import { loginSchema } from '@/lib/validation/auth';
 import { checkRateLimit, getClientKey } from '@/lib/rate-limit';
 
 export async function POST(request: Request) {
-  // Rate limit: 10 attempts per 15 minutes per IP to block brute-force attacks
   const rl = checkRateLimit(getClientKey(request, 'login'), { limit: 10, windowSecs: 900 });
   if (!rl.success) {
     const retryAfterSecs = Math.ceil((rl.resetAt - Date.now()) / 1000);
@@ -90,7 +89,8 @@ export async function POST(request: Request) {
             id: user.id,
             fullName: user.fullName,
             email: user.email,
-            phone: user.phone,
+            countryCode: user.countryCode,
+            contactNumber: user.contactNumber,
             role: user.role,
             isActive: user.isActive,
           },
