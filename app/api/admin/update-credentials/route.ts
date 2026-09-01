@@ -97,7 +97,10 @@ export async function POST(req: Request) {
     console.error("update-credentials error:", err);
     return NextResponse.json(
       { success: false, error: "Internal server error." },
-      { status: 500 }
+      {
+        status: 500
+
+      }
     );
   }
 }
