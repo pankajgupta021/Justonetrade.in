@@ -39,6 +39,7 @@ export function WhatsAppDirectSignalGenerator() {
   const [groups, setGroups] = useState<WhatsAppGroup[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState<string>("");
   const [isSending, setIsSending] = useState<boolean>(false);
+  const [customMessage, setCustomMessage] = useState<string>("");
   const [showQrModal, setShowQrModal] = useState<boolean>(false);
 
   const [statusFeedback, setStatusFeedback] = useState<{
@@ -633,6 +634,58 @@ export function WhatsAppDirectSignalGenerator() {
               );
             })}
           </div>
+        </div>
+
+        {/* Custom Message Sender */}
+        <div className="bg-violet-500/5 p-2.5 rounded-lg border border-violet-500/20">
+          <div className="text-[11px] font-bold text-violet-600 dark:text-violet-400 px-1 pb-2 border-b border-violet-500/10 mb-2">
+            📨 CUSTOM MESSAGE
+          </div>
+          <div className="flex items-center gap-2">
+            <Input
+              type="text"
+              placeholder="Type any message to send..."
+              value={customMessage}
+              onChange={(e) => setCustomMessage(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && customMessage.trim()) {
+                  handleDirectSendSignal(customMessage.trim());
+                  setCustomMessage("");
+                }
+              }}
+              className="flex-1 h-9 text-sm font-medium bg-background border-violet-500/30 focus-visible:ring-violet-500/40 placeholder:text-muted-foreground/50"
+            />
+            <Button
+              onClick={() => {
+                if (customMessage.trim()) {
+                  handleDirectSendSignal(customMessage.trim());
+                  setCustomMessage("");
+                }
+              }}
+              disabled={isSending || !customMessage.trim()}
+              className="h-9 px-4 text-xs font-bold bg-violet-600 hover:bg-violet-700 text-white shrink-0 shadow-sm"
+              title="Send custom message"
+            >
+              Send
+            </Button>
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={() => {
+                if (customMessage.trim()) handleCopyOnly(customMessage.trim(), "custom-copy");
+              }}
+              disabled={!customMessage.trim()}
+              className="h-9 w-9 shrink-0 text-muted-foreground hover:text-foreground"
+              title="Copy message"
+            >
+              {copiedId === "custom-copy" ? (
+                <Check className="h-3.5 w-3.5 text-emerald-500" />
+              ) : (
+                <Copy className="h-3.5 w-3.5" />
+              )}
+            </Button>
+          </div>
+          <p className="text-[10px] text-muted-foreground/60 px-1 mt-1.5">Press Enter or click Send to dispatch directly to the selected group.</p>
         </div>
 
         {showQrModal && waStatus !== "connected" && (
