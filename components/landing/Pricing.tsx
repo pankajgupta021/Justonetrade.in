@@ -101,7 +101,7 @@ export function Pricing() {
                 <CardTitle className="text-xl">Monthly Access</CardTitle>
                 <CardDescription>Full 30-day SPX Options training</CardDescription>
                 <div className="mt-4 flex items-baseline justify-center gap-x-1">
-                  <span className="text-4xl font-bold tracking-tight text-foreground">$2</span>
+                  <span className="text-4xl font-bold tracking-tight text-foreground">$100</span>
                   <span className="text-xs font-semibold text-muted-foreground">/ month</span>
                 </div>
               </CardHeader>
@@ -149,7 +149,7 @@ export function Pricing() {
           >
             <Card className="border-2 border-primary bg-primary/5 shadow-xl relative overflow-hidden flex flex-col justify-between w-full">
               <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-[10px] font-bold px-3 py-1 rounded-bl-lg uppercase tracking-wider">
-                Save ₹20,000
+                Save $200
               </div>
               <CardHeader className="text-center pb-6 pt-6">
                 <div className="flex justify-center mb-2">
@@ -160,10 +160,10 @@ export function Pricing() {
                 <CardTitle className="text-xl">Annual VIP Pass</CardTitle>
                 <CardDescription>365 days of full technical setups</CardDescription>
                 <div className="mt-4 flex items-baseline justify-center gap-x-1">
-                  <span className="text-4xl font-bold tracking-tight text-foreground">₹1,00,000</span>
+                  <span className="text-4xl font-bold tracking-tight text-foreground">$1000</span>
                   <span className="text-xs font-semibold text-muted-foreground">/ year</span>
                 </div>
-                <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">Includes 2 Months Free (Save ₹20,000)</span>
+                <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">Includes 2 Months Free (Save $200)</span>
               </CardHeader>
               <CardContent className="px-6 flex-1">
                 <ul className="space-y-3 text-xs leading-5 text-muted-foreground">
