@@ -10,7 +10,28 @@
  *   GET  /groups
  */
 
-import "dotenv/config"; // load .env in development
+import "dotenv/config";
+
+const _origLog = console.log.bind(console);
+const _origWarn = console.warn.bind(console);
+const _isBaileysNoise = (args: unknown[]): boolean => {
+  const first = String(args[0] ?? "");
+  return (
+    first.startsWith("Closing session:") ||
+    first.startsWith("closing session") ||
+    first.includes("SessionEntry") ||
+    first.includes("_chains") ||
+    first.includes("currentRatchet") ||
+    first.includes("indexInfo") ||
+    first.includes("pendingPreKey") ||
+    first.includes("registrationId") ||
+    first.includes("SECURITY WARNING: The SSL modes")
+  );
+};
+console.log = (...args: unknown[]) => { if (!_isBaileysNoise(args)) _origLog(...args); };
+console.warn = (...args: unknown[]) => { if (!_isBaileysNoise(args)) _origWarn(...args); };
+// ─────────────────────────────────────────────────────────────────────────────
+
 import express from "express";
 import { whatsapp } from "./whatsapp";
 import { requireSecret } from "./auth";
@@ -22,13 +43,13 @@ app.use(express.json());
 
 const PORT = parseInt(process.env.PORT ?? "3001", 10);
 
-// ── Health (public) ──────────────────────────────────────────────────────────
+// ── Health (public) ─
 
 app.get("/health", (_req, res) => {
   res.json({ status: "ok", whatsapp: whatsapp.getStatus() });
 });
 
-// ── All routes below require the shared secret ───────────────────────────────
+// ── All routes below require the shared secret ─
 
 app.use(requireSecret);
 
